@@ -2,9 +2,14 @@
   "name": "SearchParty",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
+  "private": true,
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "dev": "pnpm --filter web dev",
+    "dev:web": "pnpm --filter web dev",
+    "dev:extension": "pnpm --filter wxt-react-starter dev",
+    "build": "pnpm -r run build",
+    "test": "pnpm -r --if-present run test",
+    "lint": "pnpm -r --if-present run lint"
   },
   "keywords": [],
   "author": "",
