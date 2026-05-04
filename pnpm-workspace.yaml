@@ -1,3 +1,19 @@
 packages:
   - "packages/*"
   - "apps/*"
+prettier:
+  extends: ".prettierrc"
+  files:
+    - "**/*.{js,ts,jsx,tsx,json,css,md}"
+  plugins:
+    - "prettier-plugin-tailwindcss"
+  ignorePatterns:
+    - "dist"
+    - "node_modules"
+    - "build"
+    - "coverage"
+    - "logs"
+    - "temp"
+    - "cache"
+    - "cache-*"
+    - "cache-*"

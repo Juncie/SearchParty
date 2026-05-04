@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
-  "name": "wxt-react-starter",
-  "description": "manifest.json description",
+  "name": "search-party-extension",
+  "description": "Search Party Browser Extension",
   "version": "0.0.0",
   "icons": {
     "16": "icon/16.png",
