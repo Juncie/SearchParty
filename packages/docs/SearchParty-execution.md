@@ -1,0 +1,623 @@
+# Core Packages
+
+## `/packages/shared`
+
+### Purpose
+
+Shared types, schemas, and utilities used by:
+
+- web
+- extension
+- backend
+
+### Responsibilities
+
+#### Shared Types
+
+- ApplicantProfile
+- JobPosting
+- Application
+- Document
+- FormField
+
+#### Shared Schemas
+
+- Zod validation
+- Shared DTOs
+
+## `/packages/db`
+
+### Purpose
+
+Centralized DB logic.
+
+### Responsibilities
+
+- Drizzle schema
+- Migrations
+- DB client
+- Query utilities
+
+## `/packages/ai`
+
+### Purpose
+
+AI orchestration.
+
+### Responsibilities
+
+- Prompt templates
+- AI service wrappers
+- Resume generation
+- Cover letter generation
+- Job analysis
+
+## `/packages/documents`
+
+### Purpose
+
+Document generation/export.
+
+### Responsibilities
+
+- DOCX generation
+- PDF generation
+- Resume templates
+- Cover letter templates
+
+## `/packages/ui` (future)
+
+### Purpose
+
+Shared design system/components.
+
+---
+
+# Database Design
+
+## Tables
+
+### `users`
+
+```typescript
+id: string;
+email: string;
+name: string;
+createdAt: Date;
+updatedAt: Date;
+```
+
+### `applicant_profiles`
+
+```typescript
+id: string;
+userId: string;
+name: string;
+targetRole;
+summary: string;
+preferredTone: string;
+createdAt: Date;
+updatedAt: Date;
+```
+
+### `work_experiences`
+
+```typescript
+id: string;
+profileId: string;
+company: string;
+title: string;
+startDate: Date;
+endDate: Date;
+description: string;
+technologies: string[];
+achievements: string[];
+```
+
+### `profile_skills`
+
+```typescript
+id: string;
+profileId: string;
+name: string;
+category: string;
+yearsOfExperience: number;
+```
+
+### `projects`
+
+```typescript
+id: string;
+profileId: string;
+name: string;
+description: string;
+technologies: string[];
+url: string;
+```
+
+### `documents`
+
+```typescript
+id: string;
+userId: string;
+profileId: string;
+type: string;
+storageKey: string;
+mimeType: string;
+createdAt: Date;
+```
+
+### `job_postings`
+
+```typescript
+id: string;
+userId: string;
+platform: string;
+company: string;
+title: string;
+location: string;
+description: string;
+requirements: string;
+sourceUrl: string;
+createdAt: Date;
+```
+
+### `applications`
+
+```typescript
+id: string;
+userId: string;
+profileId: string;
+jobPostingId: string;
+status: string;
+notes: string;
+createdAt: Date;
+updatedAt: Date;
+```
+
+### `custom_answers`
+
+```typescript
+id: string;
+profileId: string;
+questionPattern: string;
+answer: string;
+category: string;
+```
+
+---
+
+# Development Phases
+
+## Phase 1 — Foundation
+
+### Goals
+
+Establish repo structure and app communication.
+
+### Tasks
+
+**Monorepo**
+
+- Bootstrap Turborepo
+- Configure shared TS config
+- Configure shared ESLint config
+- Configure Prettier
+
+**Web App**
+
+- Create TanStack Start app
+- Configure Tailwind
+- Configure routing
+- Configure auth
+
+**Extension**
+
+- Create WXT extension
+- Configure MV3
+- Configure side panel
+- Configure messaging
+
+**Shared Packages**
+
+- Setup package exports
+- Setup path aliases
+- Setup shared schemas
+
+### Deliverables
+
+### Success Criteria
+
+- Extension can call backend API
+- Shared types compile correctly
+- Local development works for all apps
+
+## Phase 2 — Applicant Profiles
+
+### Goals
+
+Users can manage reusable job profiles.
+
+### Tasks
+
+**Profile CRUD**
+
+- Create profile
+- Edit profile
+- Delete profile
+- Select active profile
+
+**Work History**
+
+- Add/edit work experience
+- Add achievements
+- Add tech stacks
+
+**Skills**
+
+- Add/remove skills
+- Categorize skills
+
+**Projects**
+
+- Add portfolio projects
+- Add project links
+
+### Deliverables
+
+### Success Criteria
+
+User can create:
+
+- Frontend profile
+- Full Stack profile
+- Shopify/Webflow profile
+
+## Phase 3 — Extension Autofill MVP
+
+### Goals
+
+Reduce repetitive typing.
+
+### Tasks
+
+**Field Detection**
+
+Detect:
+
+- first name
+- last name
+- email
+- phone
+- address
+- LinkedIn
+- portfolio
+- GitHub
+
+**Matching Logic**
+
+Use:
+
+- input name
+- labels
+- placeholders
+- aria labels
+- autocomplete attributes
+
+**Confidence System**
+
+- 90%+ = auto-fill
+- 70–89% = suggest
+- Below 70% = prompt for user confirmation
+
+**Autofill UI**
+
+- Preview fills
+- Allow approval
+- Apply values safely
+
+### Deliverables
+
+### Success Criteria
+
+User can autofill common job fields.
+
+## Phase 4 — Job Extraction
+
+### Goals
+
+Extract structured job posting data.
+
+### Supported Platforms (Initial)
+
+- Greenhouse
+- Lever
+- Ashby
+- Generic fallback
+
+### Tasks
+
+**Detect**
+
+- Job title
+- Company
+- Description
+- Requirements
+- Location
+
+**Save Job**
+
+- Save extracted job to DB
+- Link to applications
+
+### Deliverables
+
+### Success Criteria
+
+User can save job postings from supported ATS pages.
+
+## Phase 5 — Cover Letter Generation
+
+### Goals
+
+Generate high-quality tailored cover letters.
+
+### Tasks
+
+**AI Prompting**
+
+Use:
+
+- Applicant profile
+- Job description
+- Company name
+- Role title
+
+**Constraints — AI MUST NOT**
+
+- Invent credentials
+- Invent employers
+- Invent technologies
+- Invent education
+
+**Output Modes**
+
+- Professional
+- Confident
+- Friendly
+
+### Deliverables
+
+### Success Criteria
+
+User can generate + edit + copy cover letters.
+
+## Phase 6 — Document Management
+
+### Goals
+
+Centralize resumes and generated docs.
+
+### Tasks
+
+**Uploads**
+
+- Resume upload
+- Portfolio upload
+- Cover letter upload
+
+**Generated Docs**
+
+- Save generated docs
+- Attach docs to applications
+
+**Export**
+
+- DOCX export
+- PDF export
+
+### Deliverables
+
+### Success Criteria
+
+User can manage application documents.
+
+## Phase 7 — Application Tracker
+
+### Goals
+
+Turn Search Party into a job hunt operating system.
+
+### Statuses
+
+- Saved
+- Started
+- Applied
+- Interviewing
+- Offer
+- Rejected
+- Archived
+
+### Tasks
+
+**Application Tracking**
+
+- Save applications
+- Update statuses
+- Add notes
+- Add follow-up reminders
+
+### Deliverables
+
+### Success Criteria
+
+User can manage their entire job hunt workflow.
+
+## Phase 8 — Resume Tailoring
+
+### Goals
+
+Generate ATS-friendly resume variants.
+
+### Tasks
+
+**Resume Parsing**
+
+- Extract structured data
+- Normalize experience
+- Extract skills
+
+**Resume Generation**
+
+- Tailor summaries
+- Reorder skills
+- Rewrite bullets
+- Highlight relevant projects
+
+**ATS Optimization**
+
+- Match keywords naturally
+- Improve readability
+- Improve relevance
+
+**Constraints — AI MUST NOT**
+
+- Fabricate experience
+- Inflate years of experience
+- Invent projects
+
+### Deliverables
+
+### Success Criteria
+
+User can generate role-specific resume versions.
+
+---
+
+# Future Features
+
+## V2
+
+### Advanced ATS Support
+
+- Workday
+- BambooHR
+- SmartRecruiters
+- iCIMS
+
+### AI Enhancements
+
+- Interview prep
+- Recruiter response drafting
+- Salary negotiation drafting
+- Follow-up emails
+
+### Learning System
+
+- Learn user corrections
+- Improve autofill confidence
+
+## V3
+
+### SaaS Expansion
+
+- Subscription billing
+- Team accounts
+- Career coach access
+- Analytics dashboard
+
+---
+
+# Security & Privacy
+
+## Core Rules
+
+### User Data
+
+User data is sensitive.
+
+Search Party MUST:
+
+- Encrypt sensitive data
+- Use secure auth
+- Minimize extension permissions
+- Never sell user data
+
+### AI Usage
+
+- AI outputs must remain truthful
+- AI must not fabricate credentials
+- User must review generated content
+
+### Extension Permissions
+
+Only request permissions required for:
+
+- Active tabs
+- Supported job platforms
+- Storage
+- Scripting
+
+**Avoid:** `<all_urls>` unless absolutely necessary.
+
+---
+
+# Engineering Standards
+
+## Code Quality
+
+### Requirements
+
+- Type-safe APIs
+- Shared schemas
+- Strict TypeScript
+- Zod validation
+- Centralized error handling
+
+## Testing
+
+### Required
+
+- Unit tests for AI formatting
+- Integration tests for APIs
+- Autofill logic testing
+- ATS adapter testing
+
+## Performance Goals
+
+### Extension
+
+- Fast injection
+- Minimal DOM blocking
+- Low memory usage
+
+### Backend
+
+- Streaming AI responses
+- Efficient DB queries
+- Caching where appropriate
+
+## Initial MVP Success Metrics
+
+Search Party MVP is successful if a user can:
+
+- Create a reusable profile
+- Open a Greenhouse/Lever job post
+- Autofill fields
+- Generate a tailored cover letter
+- Save the application
+- Track application progress
+
+All within a few minutes.
+
+## Final Product Vision
+
+Search Party should eventually become **the operating system for modern job hunting**.
+
+Not just:
+
+- a resume tool
+- an AI writer
+- or an autofill extension
+
+But a complete workflow assistant that helps users **organize**, **optimize**, **apply**, and **track** their entire career search process.

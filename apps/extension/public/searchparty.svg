@@ -1,0 +1,33 @@
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="512" height="512" rx="112" fill="#171717"/>
+
+  <!-- Radar rings -->
+  <circle cx="256" cy="256" r="150" stroke="#2A2A2A" stroke-width="18"/>
+  <circle cx="256" cy="256" r="98" stroke="#2A2A2A" stroke-width="14"/>
+  <circle cx="256" cy="256" r="42" stroke="#2A2A2A" stroke-width="12"/>
+
+  <!-- Radar sweep -->
+  <path d="M256 256L365 147C395 177 410 215 408 256H256Z" fill="url(#sweepGradient)" opacity="0.9"/>
+
+  <!-- Main sweep line -->
+  <path d="M256 256L368 144" stroke="#10B981" stroke-width="18" stroke-linecap="round"/>
+
+  <!-- Center point -->
+  <circle cx="256" cy="256" r="18" fill="#10B981"/>
+
+  <!-- Opportunity dots -->
+  <circle cx="170" cy="206" r="12" fill="#FFFFFF"/>
+  <circle cx="333" cy="305" r="10" fill="#A3A3A3"/>
+  <circle cx="214" cy="350" r="9" fill="#A3A3A3"/>
+
+  <!-- Highlighted target -->
+  <circle cx="352" cy="170" r="20" fill="#10B981"/>
+  <circle cx="352" cy="170" r="34" stroke="#10B981" stroke-width="8" opacity="0.35"/>
+
+  <defs>
+    <linearGradient id="sweepGradient" x1="256" y1="256" x2="408" y2="147" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#10B981" stop-opacity="0.45"/>
+      <stop offset="1" stop-color="#3B82F6" stop-opacity="0.1"/>
+    </linearGradient>
+  </defs>
+</svg>
