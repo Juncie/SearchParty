@@ -1,7 +1,7 @@
-import { SearchPartyPanel } from "@/components/SearchPartyPanel";
+import { AppRouter } from "@/components/AppRouter";
 
 function App() {
-  return <SearchPartyPanel surface="popup" />;
+  return <AppRouter surface="popup" />;
 }
 
 export default App;

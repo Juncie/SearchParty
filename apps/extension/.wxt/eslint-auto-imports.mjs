@@ -1,4 +1,5 @@
 const globals = {
+  "AppRouter": true,
   "AutoMount": true,
   "AutoMountOptions": true,
   "Browser": true,
@@ -12,6 +13,7 @@ const globals = {
   "ContentScriptPositioningOptions": true,
   "ContentScriptUi": true,
   "ContentScriptUiOptions": true,
+  "ExtensionSurface": true,
   "IframeContentScriptUi": true,
   "IframeContentScriptUiOptions": true,
   "InjectScriptOptions": true,

@@ -1,16 +1,18 @@
 import { useCallback, useEffect, useState } from "react";
 
 import type { HealthResponse } from "@searchparty/shared";
+import type { ExtensionSurface } from "@/components/AppRouter";
+import { Button } from "@/components/ui/button";
 import { checkSearchPartyHealth } from "@/lib/searchparty-api";
+
+interface SearchPartyPanelProps {
+  surface: ExtensionSurface;
+}
 
 type HealthState =
   | { status: "idle" | "loading" }
   | { status: "connected"; data: HealthResponse }
   | { status: "error"; message: string };
-
-interface SearchPartyPanelProps {
-  surface: "popup" | "sidepanel";
-}
 
 export function SearchPartyPanel({
   surface,
@@ -18,6 +20,10 @@ export function SearchPartyPanel({
   const [health, setHealth] = useState<HealthState>({
     status: "idle",
   });
+  const [isDark, setIsDark] = useState(() =>
+    document.documentElement.classList.contains("dark")
+  );
+  const isSidePanel = surface === "sidepanel";
 
   const refreshHealth = useCallback(async () => {
     setHealth({ status: "loading" });
@@ -38,20 +44,19 @@ export function SearchPartyPanel({
     }
   }, []);
 
+  const toggleTheme = useCallback(() => {
+    const nextIsDark =
+      !document.documentElement.classList.contains("dark");
+    document.documentElement.classList.toggle(
+      "dark",
+      nextIsDark
+    );
+    setIsDark(nextIsDark);
+  }, []);
+
   useEffect(() => {
     void refreshHealth();
   }, [refreshHealth]);
-
-  const isSidePanel = surface === "sidepanel";
-  const [isDark, setIsDark] = useState(() =>
-    document.documentElement.classList.contains("dark")
-  );
-
-  const toggleTheme = useCallback(() => {
-    const nextIsDark = !document.documentElement.classList.contains("dark");
-    document.documentElement.classList.toggle("dark", nextIsDark);
-    setIsDark(nextIsDark);
-  }, []);
 
   return (
     <main
@@ -59,22 +64,25 @@ export function SearchPartyPanel({
         isSidePanel ? "shell shell-sidepanel" : "shell"
       }
     >
-      <section className="hero-card">
-        <p className="island-kicker">SearchParty Foundation</p>
-        <h1>Apply faster, stay in control.</h1>
+      <section className="hero-card space-y-4">
+        <p>Search Party</p>
+        <h1 className="display-title uppercase">
+          Apply faster, stay in control.
+        </h1>
         <p className="lede">
           The extension is connected to the local
           SearchParty web app and ready for the next product
           phase.
         </p>
         <div className="panel-actions">
-          <button
+          <Button
             className="panel-button"
+            variant="outline"
             type="button"
             onClick={toggleTheme}
           >
             Theme: {isDark ? "Dark" : "Light"}
-          </button>
+          </Button>
         </div>
       </section>
 
@@ -103,7 +111,7 @@ export function SearchPartyPanel({
         {health.status === "error" ? (
           <p className="error-message">{health.message}</p>
         ) : null}
-        <button
+        <Button
           className="panel-button"
           type="button"
           onClick={() => void refreshHealth()}
@@ -112,7 +120,7 @@ export function SearchPartyPanel({
           {health.status === "loading"
             ? "Checking..."
             : "Check connection"}
-        </button>
+        </Button>
       </section>
 
       <section className="next-card">

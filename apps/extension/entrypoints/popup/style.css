@@ -1,4 +1,58 @@
+@import "tailwindcss";
+@import "shadcn/tailwind.css";
 @import "../../../../packages/ui/src/styles/theme.css";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    background-color: var(--background);
+    color: var(--foreground);
+    @apply bg-background text-foreground;
+  }
+}
 
 * {
   box-sizing: border-box;
@@ -37,7 +91,11 @@
 .hero-card,
 .next-card {
   border: 1px solid var(--line);
-  background: linear-gradient(165deg, var(--surface-strong), var(--surface));
+  background: linear-gradient(
+    165deg,
+    var(--surface-strong),
+    var(--surface)
+  );
   box-shadow:
     0 1px 0 var(--inset-glint) inset,
     0 22px 44px rgba(30, 90, 72, 0.1),
@@ -48,7 +106,11 @@
   border: 1px solid var(--line);
   background: linear-gradient(
     165deg,
-    color-mix(in oklab, var(--surface-strong) 93%, white 7%),
+    color-mix(
+      in oklab,
+      var(--surface-strong) 93%,
+      white 7%
+    ),
     var(--surface)
   );
   box-shadow:
@@ -113,12 +175,20 @@ h2 {
 }
 
 .status-badge.connected {
-  background: color-mix(in oklab, var(--lagoon) 22%, var(--chip-bg));
+  background: color-mix(
+    in oklab,
+    var(--lagoon) 22%,
+    var(--chip-bg)
+  );
   color: var(--sea-ink);
 }
 
 .status-badge.error {
-  background: color-mix(in oklab, #f87171 16%, var(--chip-bg));
+  background: color-mix(
+    in oklab,
+    #f87171 16%,
+    var(--chip-bg)
+  );
   color: #aa3030;
 }
 
@@ -157,12 +227,17 @@ dd {
 .panel-button {
   border: 1px solid var(--line);
   border-radius: 12px;
-  background: linear-gradient(165deg, var(--surface-strong), var(--surface));
+  background: linear-gradient(
+    165deg,
+    var(--surface-strong),
+    var(--surface)
+  );
   color: var(--sea-ink);
   cursor: pointer;
   font: inherit;
   font-weight: 700;
-  padding: 11px 14px;
+  padding: 1rem 1.2rem;
+  
 }
 
 .panel-button:disabled {
@@ -171,6 +246,7 @@ dd {
 }
 
 .panel-button:focus-visible {
-  outline: 2px solid color-mix(in oklab, var(--lagoon) 55%, white);
+  outline: 2px solid
+    color-mix(in oklab, var(--lagoon) 55%, white);
   outline-offset: 2px;
 }

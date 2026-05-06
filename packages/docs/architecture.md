@@ -319,6 +319,9 @@ Core stack:
 - WXT
 - React 19
 - `@wxt-dev/module-react`
+- TanStack Router for in-extension `/login` and `/dashboard` routes
+- Tailwind CSS v4 (via PostCSS in extension)
+- shadcn/ui CLI and component patterns
 - TypeScript
 
 Entrypoints:
@@ -329,19 +332,38 @@ Entrypoints:
   only and logs a foundation message.
 - `apps/extension/entrypoints/popup/main.tsx` mounts the React popup.
 - `apps/extension/entrypoints/sidepanel/main.tsx` mounts the React side panel.
-- `apps/extension/components/SearchPartyPanel.tsx` renders the shared popup and
-  side panel foundation UI.
+- `apps/extension/components/SearchPartyPanel.tsx` hosts the shared extension
+  router for popup and side panel surfaces.
+- `apps/extension/components/AppRouter.tsx` defines memory-backed TanStack
+  Router routes for `/login` and `/dashboard`.
+- `apps/extension/components/screens/LoginPage.tsx` renders the logo-backed
+  login screen.
+- `apps/extension/components/screens/DashboardPage.tsx` renders the current
+  authenticated foundation dashboard with web API health status.
+- `apps/extension/components/ui/*` stores shadcn/ui primitives generated for the
+  extension app (starting with `button.tsx`).
 - `apps/extension/lib/searchparty-api.ts` calls the web app health endpoint and
   validates the response with `@searchparty/shared`.
+- `apps/extension/lib/utils.ts` exposes the shared `cn()` helper used by
+  shadcn/ui components.
+- `apps/extension/components.json` is the shadcn/ui config for extension-local
+  generation and alias resolution.
+- `apps/extension/postcss.config.mjs` enables Tailwind CSS v4 processing for
+  extension stylesheets.
 
 `apps/extension/wxt.config.ts` enables the React module, declares MV3 side panel
 metadata, requests `sidePanel` and `storage`, and grants host access only to the
 local web app URL used during Phase 1 development. Generated WXT files live
 under `apps/extension/.wxt/` and should not be edited manually.
 
+`apps/extension/entrypoints/popup/style.css` now imports Tailwind and
+`shadcn/tailwind.css` before the shared UI theme so utility classes and shadcn
+design tokens are available in both popup and side panel surfaces.
+
 Current caveat: the extension is not yet integrated with web app auth, tRPC,
-user profiles, or database-backed data. Its implemented communication path is a
-health check against `/api/health`.
+user profiles, or database-backed data. Login currently validates non-empty
+credentials client-side and routes to `/dashboard`; its implemented
+communication path is still only a health check against `/api/health`.
 
 ## Environment Configuration
 

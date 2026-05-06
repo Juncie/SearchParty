@@ -1,5 +1,6 @@
 import * as React from "react"
-import { cva, type VariantProps } from "class-variance-authority"
+import { cva } from "class-variance-authority"
+import type { VariantProps } from "class-variance-authority"
 import { Slot } from "radix-ui"
 
 import { cn } from "#/lib/utils.ts"
@@ -9,16 +10,17 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
-        default: "bg-primary text-primary-foreground hover:bg-primary/80",
+        default:
+          "bg-[var(--button-primary)] text-[var(--button-primary-foreground)] hover:bg-[var(--button-primary-hover)]",
         outline:
-          "border-border hover:bg-input/50 hover:text-foreground aria-expanded:bg-muted aria-expanded:text-foreground dark:bg-input/30",
+          "border-border bg-transparent text-foreground hover:bg-[var(--button-outline-hover)] hover:text-foreground aria-expanded:bg-[var(--button-outline-hover)] aria-expanded:text-foreground",
         secondary:
-          "bg-secondary text-secondary-foreground hover:bg-secondary/80 aria-expanded:bg-secondary aria-expanded:text-secondary-foreground",
+          "bg-[var(--button-secondary)] text-[var(--button-secondary-foreground)] hover:bg-[var(--button-secondary-hover)] aria-expanded:bg-[var(--button-secondary-hover)] aria-expanded:text-[var(--button-secondary-foreground)]",
         ghost:
-          "hover:bg-muted hover:text-foreground aria-expanded:bg-muted aria-expanded:text-foreground dark:hover:bg-muted/50",
+          "text-foreground hover:bg-[var(--button-ghost-hover)] hover:text-foreground aria-expanded:bg-[var(--button-ghost-hover)] aria-expanded:text-foreground",
         destructive:
           "bg-destructive/10 text-destructive hover:bg-destructive/20 focus-visible:border-destructive/40 focus-visible:ring-destructive/20 dark:bg-destructive/20 dark:hover:bg-destructive/30 dark:focus-visible:ring-destructive/40",
-        link: "text-primary underline-offset-4 hover:underline",
+        link: "text-[var(--button-link)] underline-offset-4 hover:text-[var(--button-link-hover)] hover:underline",
       },
       size: {
         default:

@@ -91,8 +91,8 @@ Dark-first, minimal, and structured for high information density.
 
 ### Buttons
 
-- Radius: 10px
-- Height: 36–44px
+- Radius: 10px (`rounded-[10px]`)
+- Height scale: 32px (`sm`), 36px (`default`), 40px (`lg`), 48px (`xl`)
 
 **Variants:**
 
@@ -102,23 +102,31 @@ Dark-first, minimal, and structured for high information density.
 
 **States:**
 
-- Hover → slight brightness increase
-- Active → darker shade
-- Disabled → reduced opacity (40%)
+- Hover → slight darken + subtle elevation
+- Focus-visible → 1px ring with soft glow (`ring-1 ring-ring/40`)
+- Active → slight press motion
+- Disabled → reduced opacity (50%)
 
 ---
 
 ### Inputs
 
-- Background: Surface Variant (#111827)
-- Border: 1px solid rgba(255,255,255,0.08)
-- Radius: 10px
-- Padding: 10–12px
+- Background: `bg-input/10` (dark: `bg-input/20`)
+- Border: 1px subtle border (`border-input`)
+- Radius: 10px (`rounded-[10px]`)
+- Size scale:
+  - `sm`: 32px height (`h-8`, compact forms)
+  - `default`: 36px height (`h-9`)
+  - `lg`: 40px height (`h-10`, preferred auth/forms)
+  - `xl`: 48px height (`h-12`, high-emphasis inputs)
+- Horizontal padding grows with size (`px-3` -> `px-5`)
 
 **States:**
 
-- Focus: Border becomes primary color
-- Error: Border switches to error color
+- Hover: Slight surface lift (`hover:bg-input/20`)
+- Focus: Thin polished focus treatment (`ring-1 ring-ring/40`, `border-primary/50`, subtle background lift)
+- Error: Border/ring switch to destructive token
+- Motion: 200ms smooth transitions on border/ring/background for a sleek typing feel
 
 ---
 
@@ -330,18 +338,24 @@ Use an **8px grid**:
 
 - Background: accent primary
 - Text: white
-- Radius: 10–14px
-- Padding: 10px 16px
+- Radius: 10px
+- Size scale: 32px (`sm`), 36px (`default`), 40px (`lg`), 48px (`xl`)
+- Padding scales with size (`px-3` -> `px-6`)
 
 **Hover:**
 
 - Slight darken
-- Subtle scale (1.02)
+- Subtle elevation
+
+**Focus/Active:**
+
+- Focus-visible: thin 1px ring with soft glow
+- Active: slight press feedback
 
 ### Secondary button
 
 - Background: transparent
-- Border: 1px solid `#2a2a2a`
+- Border: tokenized border color (`border-border`)
 - Text: white
 
 ### Ghost button
@@ -351,15 +365,25 @@ Use an **8px grid**:
 
 ## Inputs
 
-- Background: `#1f1f1f`
-- Border: 1px solid `#2a2a2a`
+- Background: tokenized input surface (`bg-input/10`, dark: `bg-input/20`)
+- Border: tokenized 1px border (`border-input`)
 - Radius: 10px
-- Padding: 10px 12px
+- Size scale:
+  - `sm`: `h-8`
+  - `default`: `h-9`
+  - `lg`: `h-10`
+  - `xl`: `h-12`
+- Padding scale: `px-3` / `px-3.5` / `px-4` / `px-5`
 
 **Focus:**
 
-- Border: accent primary
-- Glow: subtle
+- Thin ring (`ring-1 ring-ring/40`)
+- Border tint (`border-primary/50`)
+- Subtle background lift for tactile feel
+
+**Interaction:**
+
+- Smooth 200ms transitions for hover, focus, and typing context
 
 ## Cards
 
