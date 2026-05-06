@@ -43,6 +43,7 @@ SearchParty/
   packages/
     docs/                Architecture and product planning docs
     shared/              Minimal cross-app contracts
+    ui/                  Shared CSS theme tokens and global styles
   package.json           Root Turbo scripts
   pnpm-workspace.yaml    Workspace definition for apps/* and packages/*
   turbo.json             Build/dev/test/lint task orchestration
@@ -130,7 +131,7 @@ current source tree.
 - TanStack Start
 - React through `@vitejs/plugin-react`
 
-The development server runs on port `3001` through:
+The development server runs on port `4310` through:
 
 ```sh
 pnpm --filter web dev
@@ -164,9 +165,13 @@ enables scroll restoration, and registers SSR query integration.
 imports global CSS, mounts TanStack devtools, and renders the scripts required
 by TanStack Start. The document title is `SearchParty`.
 
-`apps/web/src/styles.css` imports Google fonts, Tailwind v4,
-`@tailwindcss/typography`, and `tw-animate-css`. It defines the current design
-tokens and utility classes for the SearchParty visual direction.
+`apps/web/src/styles.css` imports Tailwind v4 and related plugins, then imports
+the shared theme stylesheet from `packages/ui/src/styles/theme.css`.
+
+`packages/ui/src/styles/theme.css` is now the shared source for SearchParty's
+design tokens and global visual primitives (light/dark variables, backgrounds,
+card surfaces, typography accents, transitions, and utility presentation
+classes). Both the web app and extension consume this file.
 
 The web app supports these source aliases:
 
@@ -210,7 +215,7 @@ client uses `httpBatchStreamLink` and targets `/api/trpc`.
 hooks and creates tRPC options helpers via `createTRPCOptionsProxy`.
 
 Server-side tRPC URL construction uses `SERVER_URL` when set and otherwise
-defaults to the shared local web dev URL, `http://localhost:3001`.
+defaults to the shared local web dev URL, `http://localhost:4310`.
 
 ## Authentication
 
@@ -269,6 +274,37 @@ Current caveats:
 `apps/web/src/db-collections/index.ts` defines a TanStack React DB
 `messagesCollection` using `localOnlyCollectionOptions`. This is a browser-side
 local collection and is not connected to PostgreSQL.
+
+### Uploaded File Storage Direction (Planned)
+
+For resumes, cover letters, and generated documents, prefer object storage
+instead of storing binary file blobs in PostgreSQL. Keep file metadata in the
+database and store the file bytes in an object bucket.
+
+Recommended near-term options before AWS S3:
+
+- Cloudflare R2: S3-compatible API, no egress fees, generous free tier for
+  early usage.
+- Supabase Storage: simple developer UX when already using Supabase services;
+  good free tier for MVPs.
+- Backblaze B2: low-cost object storage with predictable pricing and
+  S3-compatible access.
+
+Suggested metadata model in PostgreSQL:
+
+- `documents` table with `id`, `user_id`, `kind`, `storage_provider`,
+  `storage_key`, `mime_type`, `size_bytes`, `checksum`, and timestamps.
+- Access control enforced in application/API logic; never expose bucket-wide
+  public access for private user documents.
+
+Migration-friendly approach:
+
+- Use an internal storage adapter (`putObject`, `getSignedUploadUrl`,
+  `getSignedDownloadUrl`, `deleteObject`) so provider changes do not affect
+  route handlers.
+- Keep object keys provider-agnostic (for example:
+  `users/{userId}/documents/{documentId}/{filename}`) to simplify future moves
+  between R2, B2, Supabase Storage, and S3.
 
 ## Browser Extension
 
@@ -346,6 +382,16 @@ Current exports:
 The package intentionally does not define applicant profiles, job postings,
 applications, documents, autofill models, or AI contracts yet.
 
+## Shared UI Theme
+
+`packages/ui/src/styles/theme.css` contains the shared CSS theme used by:
+
+- `apps/web/src/styles.css`
+- `apps/extension/entrypoints/popup/style.css` (and sidepanel via popup style import)
+
+This keeps extension and web visual language aligned while still allowing each
+app to define small surface-specific layout rules.
+
 ## Development And Testing
 
 Common root commands:
@@ -370,6 +416,39 @@ pnpm --filter web db:push
 pnpm --filter search-party-extension dev
 pnpm --filter search-party-extension build
 ```
+
+### Dev Orchestration Check (2026-05-06)
+
+Quick review of root `pnpm dev` behavior and local port wiring:
+
+- Root `pnpm dev` runs `turbo dev`, which starts every workspace package with a
+  `dev` script (`apps/web` and `apps/extension` in the current repo).
+- `apps/web/package.json` hard-codes Vite to `--port 4310 --strictPort`.
+- The extension and shared package also hard-code the same web URL:
+  - `apps/extension/wxt.config.ts` host permissions: `http://localhost:4310/*`
+  - `apps/extension/entrypoints/content.ts` matches: `http://localhost:4310/*`
+  - `packages/shared/src/index.ts` `SEARCHPARTY_APP.webDevUrl`:
+    `http://localhost:4310`
+- `strictPort` is enabled for web dev, so startup fails fast when `4310` is in
+  use instead of silently switching to a different port.
+
+Primary risk:
+
+- Port collisions can still block startup, but host targeting no longer drifts
+  between web and extension during local development.
+
+Recommended fix before Phase 2+ work:
+
+1. Enforce a stable web port in development (`strictPort`) so startup fails
+   fast instead of silently switching ports.
+2. Keep one source of truth for local web URL (env-driven or shared constant)
+   and consume it in extension host permissions, extension match patterns, and
+   API client defaults.
+3. Add root convenience scripts to run apps independently when needed (for
+   example, `dev:web` and `dev:extension`) while keeping `turbo dev` for full
+   stack runs.
+4. Add a short troubleshooting note in docs: if `4310` is occupied, free it or
+   change the shared configured dev URL across web, extension, and shared.
 
 Testing and quality tools:
 
@@ -398,7 +477,7 @@ Current implemented security mechanisms:
 - Better Auth handles auth routes and session cookies.
 - `tanstackStartCookies` integrates auth cookies into TanStack Start.
 - Client-exposed environment variables must use the `VITE_` prefix.
-- The extension currently grants host access only to `http://localhost:3001/*`.
+- The extension currently grants host access only to `http://localhost:4310/*`.
 
 Security gaps to address before production:
 
@@ -420,6 +499,24 @@ Security gaps to address before production:
 - Better Auth is configured but not visibly connected to Drizzle/PostgreSQL.
 - AI dependencies are installed, but AI generation workflows are not
   implemented.
+
+## Architecture Readiness For Extension UI
+
+Architecture is sufficient to begin a beginner extension UI.
+
+Ready now:
+
+- Monorepo boundaries are clear (`apps/web`, `apps/extension`, `packages/shared`).
+- Extension shell exists (popup + side panel + background + content scripts).
+- Shared package already provides a cross-app contract pattern.
+
+Do next before/while UI work starts:
+
+- Keep local web URL/port changes synchronized across web, extension, and shared.
+- Keep MVP UI focused on read-only/foundation flows until auth persistence and
+  profile data models are implemented.
+- Build UI primitives for extension side panel first (status, connectivity,
+  action sections) to match the documented product phases.
 
 ## Product Roadmap Context
 

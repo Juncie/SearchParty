@@ -17,7 +17,7 @@
     "scripting"
   ],
   "host_permissions": [
-    "http://localhost:3001/*",
+    "http://localhost:4310/*",
     "http://localhost/*"
   ],
   "side_panel": {

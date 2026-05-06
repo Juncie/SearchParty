@@ -1,4 +1,9 @@
-# Design System
+---
+description: Design system for Search Party.
+alwaysApply: true
+---
+
+# Search Party Design System
 
 ## Overview
 
@@ -35,21 +40,30 @@ Dark-first, minimal, and structured for high information density.
 
 ---
 
-## Typography
+# Typography
 
-- **Font Family**: Inter
+- **Heading Font**: Outfit
+- **Body Font**: DM Sans
 
-### Type Scale
+## Font stack
 
-- **H1**: 3rem / 48px / Semi-Bold
-- **H2**: 2rem / 32px / Semi-Bold
-- **H3**: 1.75rem / 28px / Medium
-- **H4**: 1.5rem / 24px / Medium
-- **H5**: 1.375rem / 22px / Medium
-- **H6**: 1.175rem / 20px / Medium
-- **Body (md)**: 1rem / 16px / Regular
-- **Body (sm)**: 0.875rem / 14px / Regular
-- **Label**: 0.75rem / 12px / Medium / Uppercase
+## Type scale
+
+| Usage | Size    | Weight |
+| ----- | ------- | ------ |
+| Hero  | 36–48px | 700    |
+| H1    | 28–32px | 600    |
+| H2    | 22–26px | 600    |
+| H3    | 18–20px | 500    |
+| Body  | 14–16px | 400    |
+| Small | 12–13px | 400    |
+
+## Style rules
+
+- Headlines: slightly tight letter spacing
+- Body: relaxed readability
+- Avoid excessive bolding
+- Use uppercase sparingly for emphasis
 
 ### Usage
 
@@ -279,38 +293,6 @@ Tone:
   #262626
 );
 ```
-
----
-
-# Typography
-
-## Font stack
-
-```css
-font-family:
-  Inter,
-  system-ui,
-  -apple-system,
-  sans-serif;
-```
-
-## Type scale
-
-| Usage | Size    | Weight |
-| ----- | ------- | ------ |
-| Hero  | 36–48px | 700    |
-| H1    | 28–32px | 600    |
-| H2    | 22–26px | 600    |
-| H3    | 18–20px | 500    |
-| Body  | 14–16px | 400    |
-| Small | 12–13px | 400    |
-
-## Style rules
-
-- Headlines: slightly tight letter spacing
-- Body: relaxed readability
-- Avoid excessive bolding
-- Use uppercase sparingly for emphasis
 
 ---
 

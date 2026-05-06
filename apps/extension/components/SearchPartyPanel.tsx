@@ -12,8 +12,12 @@ interface SearchPartyPanelProps {
   surface: "popup" | "sidepanel";
 }
 
-export function SearchPartyPanel({ surface }: SearchPartyPanelProps) {
-  const [health, setHealth] = useState<HealthState>({ status: "idle" });
+export function SearchPartyPanel({
+  surface,
+}: SearchPartyPanelProps) {
+  const [health, setHealth] = useState<HealthState>({
+    status: "idle",
+  });
 
   const refreshHealth = useCallback(async () => {
     setHealth({ status: "loading" });
@@ -39,21 +43,44 @@ export function SearchPartyPanel({ surface }: SearchPartyPanelProps) {
   }, [refreshHealth]);
 
   const isSidePanel = surface === "sidepanel";
+  const [isDark, setIsDark] = useState(() =>
+    document.documentElement.classList.contains("dark")
+  );
+
+  const toggleTheme = useCallback(() => {
+    const nextIsDark = !document.documentElement.classList.contains("dark");
+    document.documentElement.classList.toggle("dark", nextIsDark);
+    setIsDark(nextIsDark);
+  }, []);
 
   return (
-    <main className={isSidePanel ? "shell shell-sidepanel" : "shell"}>
+    <main
+      className={
+        isSidePanel ? "shell shell-sidepanel" : "shell"
+      }
+    >
       <section className="hero-card">
-        <p className="eyebrow">SearchParty Foundation</p>
+        <p className="island-kicker">SearchParty Foundation</p>
         <h1>Apply faster, stay in control.</h1>
         <p className="lede">
-          The extension is connected to the local SearchParty web app and ready
-          for the next product phase.
+          The extension is connected to the local
+          SearchParty web app and ready for the next product
+          phase.
         </p>
+        <div className="panel-actions">
+          <button
+            className="panel-button"
+            type="button"
+            onClick={toggleTheme}
+          >
+            Theme: {isDark ? "Dark" : "Light"}
+          </button>
+        </div>
       </section>
 
       <section className="status-card" aria-live="polite">
         <div>
-          <p className="status-label">Web API</p>
+          <p className="island-kicker">Web API</p>
           <h2>{getStatusTitle(health)}</h2>
         </div>
         <StatusBadge health={health} />
@@ -65,7 +92,11 @@ export function SearchPartyPanel({ surface }: SearchPartyPanelProps) {
             </div>
             <div>
               <dt>Checked</dt>
-              <dd>{new Date(health.data.timestamp).toLocaleTimeString()}</dd>
+              <dd>
+                {new Date(
+                  health.data.timestamp
+                ).toLocaleTimeString()}
+              </dd>
             </div>
           </dl>
         ) : null}
@@ -73,19 +104,23 @@ export function SearchPartyPanel({ surface }: SearchPartyPanelProps) {
           <p className="error-message">{health.message}</p>
         ) : null}
         <button
+          className="panel-button"
           type="button"
           onClick={() => void refreshHealth()}
           disabled={health.status === "loading"}
         >
-          {health.status === "loading" ? "Checking..." : "Check connection"}
+          {health.status === "loading"
+            ? "Checking..."
+            : "Check connection"}
         </button>
       </section>
 
       <section className="next-card">
-        <p className="status-label">Phase Boundary</p>
+        <p className="island-kicker">Phase Boundary</p>
         <p>
-          Foundation wiring is active. Profile management, autofill, ATS
-          adapters, and AI generation remain intentionally out of scope.
+          Foundation wiring is active. Profile management,
+          autofill, ATS adapters, and AI generation remain
+          intentionally out of scope.
         </p>
       </section>
     </main>
@@ -100,11 +135,17 @@ function StatusBadge({ health }: { health: HealthState }) {
         ? "Needs web app"
         : "Checking";
 
-  return <span className={`status-badge ${health.status}`}>{label}</span>;
+  return (
+    <span className={`status-badge ${health.status}`}>
+      {label}
+    </span>
+  );
 }
 
 function getStatusTitle(health: HealthState) {
-  if (health.status === "connected") return "Connected to SearchParty";
-  if (health.status === "error") return "Connection unavailable";
+  if (health.status === "connected")
+    return "Connected to SearchParty";
+  if (health.status === "error")
+    return "Connection unavailable";
   return "Checking local API";
 }
