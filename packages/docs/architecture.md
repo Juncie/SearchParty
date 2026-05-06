@@ -6,8 +6,9 @@ platform with a web application for managing applicant data and a browser
 extension for helping users complete job applications.
 
 The codebase is still early. The current implementation includes a TanStack
-Start web app, a WXT browser extension scaffold, Better Auth wiring, tRPC API
-wiring, and an initial Drizzle/PostgreSQL schema.
+Start web app, a WXT browser extension scaffold, Better Auth wiring, Hono and
+tRPC API wiring, a minimal shared contracts package, and an initial
+Drizzle/PostgreSQL schema.
 
 ## Repository Layout
 
@@ -18,7 +19,8 @@ SearchParty/
   apps/
     web/                 TanStack Start full-stack React app
       src/
-        routes/          File-based routes and API routes
+        routes/          File-based routes and API route bridges
+        server/          Hono API app
         integrations/    TanStack Query, tRPC, and Better Auth helpers
         lib/             Auth client/server helpers and utilities
         db/              Drizzle client and PostgreSQL schema
@@ -32,19 +34,25 @@ SearchParty/
       entrypoints/
         background.ts
         content.ts
-        popup/           React popup UI scaffold
+        popup/           React popup UI
+        sidepanel/       React side panel UI
+      components/        Shared extension React components
+      lib/               Extension API client helpers
       wxt.config.ts
       package.json
   packages/
     docs/                Architecture and product planning docs
+    shared/              Minimal cross-app contracts
   package.json           Root Turbo scripts
   pnpm-workspace.yaml    Workspace definition for apps/* and packages/*
   turbo.json             Build/dev/test/lint task orchestration
   tsconfig.json          Shared strict TypeScript baseline
 ```
 
-There are no shared runtime packages under `packages/*` yet. The workspace is
-prepared for future shared packages, but today `packages/` contains docs only.
+`packages/shared` is intentionally small in Phase 1. It exports app metadata and
+the health-check contract used by the web app and extension. It does not contain
+applicant profile, job posting, application, document, autofill, or AI domain
+models yet.
 
 ## System Overview
 
@@ -52,20 +60,23 @@ prepared for future shared packages, but today `packages/` contains docs only.
 User
   -> Web app: apps/web
        -> TanStack Router pages
+       -> /api/health handled by Hono
        -> /api/trpc/* handled by tRPC
        -> /api/auth/* handled by Better Auth
        -> Drizzle client and PostgreSQL schema
 
   -> Browser extension: apps/extension
        -> Popup React UI
+       -> Side panel React UI
+       -> Health-check client for apps/web
        -> Content script
        -> Background script
 ```
 
 The intended product architecture is a web platform plus a browser extension.
 In the current code, the web app and extension are separate applications in the
-same monorepo. There is not yet an implemented communication path between the
-extension and the web app API.
+same monorepo. The extension can call the web app's `/api/health` endpoint to
+verify local backend connectivity.
 
 ## Root Tooling
 
@@ -83,8 +94,8 @@ extension and the web app API.
 
 `apps/web` is the main full-stack web application. Product plans describe it as
 the place where users will manage applicant profiles, resumes, cover letters,
-generated answers, saved jobs, and application history. Its visible UI is still
-mostly a starter route.
+generated answers, saved jobs, and application history. Its visible UI is a
+SearchParty foundation page with a link to the health endpoint.
 
 Core stack:
 
@@ -94,6 +105,7 @@ Core stack:
 - TanStack Query
 - TanStack Router SSR Query integration
 - tRPC 11
+- Hono
 - SuperJSON
 - Better Auth
 - Drizzle ORM and Drizzle Kit
@@ -135,6 +147,7 @@ Implemented routes:
 
 - `/` from `apps/web/src/routes/index.tsx`
 - Root shell from `apps/web/src/routes/__root.tsx`
+- `/api/health` from `apps/web/src/routes/api/health.ts`
 - `/api/trpc/*` from `apps/web/src/routes/api.trpc.$.tsx`
 - `/api/auth/*` from `apps/web/src/routes/api/auth/$.ts`
 
@@ -149,7 +162,7 @@ enables scroll restoration, and registers SSR query integration.
 
 `apps/web/src/routes/__root.tsx` owns the HTML shell. It sets viewport metadata,
 imports global CSS, mounts TanStack devtools, and renders the scripts required
-by TanStack Start. The title is currently still `TanStack Start Starter`.
+by TanStack Start. The document title is `SearchParty`.
 
 `apps/web/src/styles.css` imports Google fonts, Tailwind v4,
 `@tailwindcss/typography`, and `tw-animate-css`. It defines the current design
@@ -166,7 +179,17 @@ source files.
 ## API Layer
 
 The API surface is hosted inside the TanStack Start web app rather than in a
-separate backend service.
+separate backend service. Hono is the backend HTTP app for foundation endpoints
+and can grow into additional API routes without creating a separate server.
+
+Core Hono files:
+
+- `apps/web/src/server/api.ts`
+- `apps/web/src/routes/api/health.ts`
+
+`api.ts` creates the Hono app and currently exposes `GET /api/health`. The
+health response is created and validated through `@searchparty/shared`.
+`api/health.ts` bridges TanStack Start's file route handler to `api.fetch()`.
 
 Core tRPC files:
 
@@ -186,8 +209,8 @@ client uses `httpBatchStreamLink` and targets `/api/trpc`.
 `root-provider.tsx` creates a `QueryClient` with SuperJSON hydrate/dehydrate
 hooks and creates tRPC options helpers via `createTRPCOptionsProxy`.
 
-Important caveat: server-side tRPC URL construction defaults to port `3000`,
-while the web dev script uses port `3001`.
+Server-side tRPC URL construction uses `SERVER_URL` when set and otherwise
+defaults to the shared local web dev URL, `http://localhost:3001`.
 
 ## Authentication
 
@@ -232,14 +255,13 @@ The current Drizzle schema defines one PostgreSQL table:
 - `title`: required text
 - `created_at`: timestamp defaulting to now
 
-`db/index.ts` creates a Drizzle client from `process.env.DATABASE_URL!`.
+`db/index.ts` creates a Drizzle client from the validated `DATABASE_URL`
+environment variable.
 `drizzle.config.ts` loads `.env.local` and `.env`, writes migrations to
 `./drizzle`, and targets PostgreSQL.
 
 Current caveats:
 
-- `DATABASE_URL` is required by the database client but is not declared in
-  `apps/web/src/env.ts`.
 - No generated `apps/web/drizzle/` migration files are present in the current
   repository snapshot.
 - The tRPC todos API does not use the Drizzle table yet.
@@ -254,7 +276,7 @@ local collection and is not connected to PostgreSQL.
 it as the assistant that detects job application fields, helps autofill data,
 and supports user-controlled job application workflows.
 
-The current code is a WXT + React scaffold.
+The current code is a WXT + React foundation shell.
 
 Core stack:
 
@@ -265,18 +287,25 @@ Core stack:
 
 Entrypoints:
 
-- `apps/extension/entrypoints/background.ts` logs the extension runtime ID.
-- `apps/extension/entrypoints/content.ts` runs on `*://*.google.com/*` and logs
-  a content-script message.
+- `apps/extension/entrypoints/background.ts` enables opening the side panel from
+  the extension action when the browser supports the Side Panel API.
+- `apps/extension/entrypoints/content.ts` currently matches the local web app
+  only and logs a foundation message.
 - `apps/extension/entrypoints/popup/main.tsx` mounts the React popup.
-- `apps/extension/entrypoints/popup/App.tsx` renders the default WXT + React
-  counter UI.
+- `apps/extension/entrypoints/sidepanel/main.tsx` mounts the React side panel.
+- `apps/extension/components/SearchPartyPanel.tsx` renders the shared popup and
+  side panel foundation UI.
+- `apps/extension/lib/searchparty-api.ts` calls the web app health endpoint and
+  validates the response with `@searchparty/shared`.
 
-`apps/extension/wxt.config.ts` enables the React module. Generated WXT files
-live under `apps/extension/.wxt/` and should not be edited manually.
+`apps/extension/wxt.config.ts` enables the React module, declares MV3 side panel
+metadata, requests `sidePanel` and `storage`, and grants host access only to the
+local web app URL used during Phase 1 development. Generated WXT files live
+under `apps/extension/.wxt/` and should not be edited manually.
 
 Current caveat: the extension is not yet integrated with web app auth, tRPC,
-user profiles, or database-backed data.
+user profiles, or database-backed data. Its implemented communication path is a
+health check against `/api/health`.
 
 ## Environment Configuration
 
@@ -285,16 +314,15 @@ user profiles, or database-backed data.
 Declared variables:
 
 - Server: `SERVER_URL`, optional URL
+- Server: `DATABASE_URL`, optional URL
 - Client: `VITE_APP_TITLE`, optional non-empty string
-
-Important gap: `DATABASE_URL` is used by Drizzle and Drizzle Kit but is not
-validated through `env.ts`.
 
 ## External Integrations
 
 Implemented or configured integrations:
 
 - Better Auth for authentication
+- Hono for backend HTTP routing inside the web app
 - PostgreSQL through `pg` and Drizzle
 - Google Fonts in `styles.css`
 
@@ -303,6 +331,20 @@ Dependencies present but not yet wired into visible product flows:
 - TanStack AI provider packages for Anthropic, Gemini, Ollama, and OpenAI
 - Sentry is not installed, but `vite.config.ts` marks `@sentry/*` as external
   in Nitro's Rollup config
+
+## Shared Package
+
+`packages/shared` contains foundation-only contracts used across apps.
+
+Current exports:
+
+- `SEARCHPARTY_APP`: shared app metadata and the local web development URL.
+- `healthResponseSchema`: Zod schema for the web health response.
+- `HealthResponse`: inferred TypeScript type for the health response.
+- `createHealthResponse()`: helper used by the Hono health endpoint.
+
+The package intentionally does not define applicant profiles, job postings,
+applications, documents, autofill models, or AI contracts yet.
 
 ## Development And Testing
 
@@ -356,11 +398,12 @@ Current implemented security mechanisms:
 - Better Auth handles auth routes and session cookies.
 - `tanstackStartCookies` integrates auth cookies into TanStack Start.
 - Client-exposed environment variables must use the `VITE_` prefix.
+- The extension currently grants host access only to `http://localhost:3001/*`.
 
 Security gaps to address before production:
 
 - Configure durable Better Auth persistence explicitly.
-- Validate `DATABASE_URL` and auth secrets through a single env schema.
+- Validate auth secrets through the central env schema.
 - Define authorization boundaries for applicant profiles, documents, generated
   answers, and application history.
 - Design extension-to-web authentication before the extension reads or writes
@@ -369,16 +412,14 @@ Security gaps to address before production:
 
 ## Known Architectural Gaps
 
-- The planned shared packages do not exist yet.
-- The web UI is still mostly a starter route.
-- The browser extension is scaffolded and not connected to backend APIs.
+- Shared domain packages for applicant, job, document, and application data do
+  not exist yet.
+- The web UI is still a foundation landing route.
+- The browser extension is connected only to the health endpoint.
 - tRPC stores todos in memory while Drizzle defines a PostgreSQL `todos` table.
 - Better Auth is configured but not visibly connected to Drizzle/PostgreSQL.
 - AI dependencies are installed, but AI generation workflows are not
   implemented.
-- `DATABASE_URL` is not part of central env validation.
-- Server-side tRPC URL construction defaults to port `3000`, while the web dev
-  script uses port `3001`.
 
 ## Product Roadmap Context
 
@@ -416,6 +457,7 @@ Likely next architecture steps:
 - ATS: Applicant Tracking System.
 - Better Auth: Authentication library used by the web app.
 - Drizzle: TypeScript ORM and migration toolkit used for PostgreSQL.
+- Hono: HTTP routing framework used for backend API endpoints in the web app.
 - Nitro: Server runtime and build layer used by TanStack Start.
 - TanStack Start: Full-stack React framework used by the web app.
 - tRPC: Type-safe API layer used by the web app.

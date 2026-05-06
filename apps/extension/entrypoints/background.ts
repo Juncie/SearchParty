@@ -1,5 +1,7 @@
 export default defineBackground(() => {
-  console.log("Hello background!", {
-    id: browser.runtime.id,
-  });
+  if (browser.sidePanel?.setPanelBehavior) {
+    void browser.sidePanel.setPanelBehavior({
+      openPanelOnActionClick: true,
+    });
+  }
 });

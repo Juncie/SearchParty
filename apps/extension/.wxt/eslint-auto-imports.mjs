@@ -21,6 +21,7 @@ const globals = {
   "MatchPattern": true,
   "MigrationError": true,
   "ScriptPublicPath": true,
+  "SearchPartyPanel": true,
   "ShadowRootContentScriptUi": true,
   "ShadowRootContentScriptUiOptions": true,
   "StopAutoMount": true,

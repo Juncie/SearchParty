@@ -1,6 +1,6 @@
 export default defineContentScript({
-  matches: ["*://*.google.com/*"],
+  matches: ["http://localhost:3001/*"],
   main() {
-    console.log("Hello content.");
+    console.info("SearchParty content script loaded.");
   },
 });
