@@ -7,8 +7,8 @@ export default [
   {
     rules: {
       'import/no-cycle': 'off',
-      'import/order': 'on',
-      'sort-imports': 'on',
+      'import/order': 'warn',
+      'sort-imports': 'warn',
       '@typescript-eslint/array-type': 'off',
       '@typescript-eslint/require-await': 'off',
       'pnpm/json-enforce-catalog': 'off',

@@ -18,8 +18,8 @@
   ],
   "host_permissions": [
     "http://localhost:3001/*",
-    "*",
-    "http://localhost/*"
+    "chrome-extension://edbcjfjjdnagdeomigphpocbffcfifkc/*",
+    "chrome-extension://*/*"
   ],
   "side_panel": {
     "default_path": "sidepanel.html"

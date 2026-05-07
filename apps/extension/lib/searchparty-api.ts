@@ -19,7 +19,15 @@ export async function getSearchPartyWebBaseUrl() {
 
 export async function checkSearchPartyHealth(): Promise<HealthResponse> {
   const webBaseUrl = await getSearchPartyWebBaseUrl();
-  const response = await fetch(`${webBaseUrl}/api/health`);
+  let response: Response;
+
+  try {
+    response = await fetch(`${webBaseUrl}/api/health`);
+  } catch {
+    throw new Error(
+      `Unable to reach SearchParty web app at ${webBaseUrl}.`
+    );
+  }
 
   if (!response.ok) {
     throw new Error(
@@ -52,36 +60,78 @@ interface AuthResponseError {
   error?: string;
 }
 
+function formatAuthErrorMessage(
+  message: string,
+  webBaseUrl: string
+) {
+  const normalized = message.toLowerCase();
+
+  if (normalized.includes("invalid origin")) {
+    return "Extension origin is not trusted by SearchParty auth. Update BETTER_AUTH_TRUSTED_EXTENSION_ORIGINS in web env and restart the web app.";
+  }
+
+  if (normalized.includes("auth_schema_not_ready")) {
+    return "SearchParty auth database schema is not ready. Run `pnpm --filter web db:migrate` and restart the web app.";
+  }
+
+  if (
+    normalized.includes("failed to fetch") ||
+    normalized.includes("networkerror")
+  ) {
+    return `Unable to reach SearchParty web app at ${webBaseUrl}. Make sure the web app is running and extension host permissions include this URL.`;
+  }
+
+  return message;
+}
+
 async function callAuthEndpoint<T>(
   path: string,
   init: RequestInit = {}
 ): Promise<T> {
   const webBaseUrl = await getSearchPartyWebBaseUrl();
   const hasBody = init.body !== undefined && init.body !== null;
+  let response: Response;
 
-  const response = await fetch(`${webBaseUrl}/api/auth/${path}`, {
-    credentials: "include",
-    ...init,
-    headers: hasBody
-      ? {
-          "content-type": "application/json",
-          ...(init.headers ?? {}),
-        }
-      : init.headers,
-  });
+  try {
+    response = await fetch(`${webBaseUrl}/api/auth/${path}`, {
+      credentials: "include",
+      ...init,
+      headers: hasBody
+        ? {
+            "content-type": "application/json",
+            ...(init.headers ?? {}),
+          }
+        : init.headers,
+    });
+  } catch (error) {
+    const message =
+      error instanceof Error
+        ? error.message
+        : "Failed to reach auth endpoint.";
+    throw new Error(
+      formatAuthErrorMessage(message, webBaseUrl)
+    );
+  }
 
   if (!response.ok) {
-    let message = "Authentication request failed.";
+    let message = `Authentication request failed (${response.status}).`;
 
     try {
       const payload = (await response.json()) as AuthResponseError;
-      message = payload.message ?? payload.error ?? message;
+      message =
+        payload.message ??
+        payload.error ??
+        (typeof (payload as { code?: string }).code === "string"
+          ? (payload as { code: string }).code
+          : message);
     } catch {
       // Fallback to status when response isn't JSON
-      message = `${message} (${response.status})`;
+      message = `${message} ${response.statusText}`.trim();
     }
 
-    throw new Error(message);
+    throw new Error(
+      formatAuthErrorMessage(message, webBaseUrl)
+    );
   }
 
   if (response.status === 204) {

@@ -238,8 +238,13 @@ Server-side auth:
 - `betterAuth` enables email/password authentication.
 - `drizzleAdapter` persists auth users/sessions in PostgreSQL via
   `apps/web/src/db/index.ts`.
+- `ensureAuthTablesReady()` checks for required Better Auth tables (`user`,
+  `session`, `account`, `verification`) before serving auth requests.
 - `tanstackStartCookies` integrates auth cookies with TanStack Start.
-- `/api/auth/*` forwards GET and POST requests to `auth.handler`.
+- `/api/auth/*` validates auth schema readiness and then forwards requests to
+  `auth.handler`.
+- Trusted origins are sourced from local web origins plus
+  `BETTER_AUTH_TRUSTED_EXTENSION_ORIGINS` (comma-separated extension origins).
 
 Client-side auth:
 
@@ -360,7 +365,8 @@ Entrypoints:
   extension app (starting with `button.tsx`).
 - `apps/extension/lib/searchparty-api.ts` calls the web app health endpoint and
   Better Auth endpoints (`sign-up`, `sign-in`, `get-session`, `sign-out`) over
-  HTTP with cookie credentials.
+  HTTP with cookie credentials and maps common failures (invalid origin,
+  missing auth tables, unreachable web app) to user-friendly messages.
 - `apps/extension/lib/utils.ts` exposes the shared `cn()` helper used by
   shadcn/ui components.
 - `apps/extension/components.json` is the shadcn/ui config for extension-local
@@ -397,6 +403,8 @@ Declared variables:
 
 - Server: `SERVER_URL`, optional URL
 - Server: `DATABASE_URL`, optional URL
+- Better Auth runtime: `BETTER_AUTH_URL`, `BETTER_AUTH_SECRET`,
+  `BETTER_AUTH_TRUSTED_EXTENSION_ORIGINS`
 - Client: `VITE_APP_TITLE`, optional non-empty string
 
 ## External Integrations

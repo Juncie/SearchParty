@@ -232,6 +232,79 @@ Establish repo structure and app communication.
 - Shared types compile correctly
 - Local development works for all apps
 
+### P1 Stabilization Exit Checklist
+
+- Auth happy path works in both popup and sidepanel:
+  - Sign up
+  - Sign in
+  - Session restore after extension reload
+  - Sign out
+- Fresh database bootstrap works:
+  - `user`, `session`, `account`, and `verification` tables exist after migration
+  - Auth succeeds immediately after migration
+- Failure UX is friendly in extension UI (no backend stack traces surfaced):
+  - Missing auth tables
+  - Bad web app base URL
+  - Invalid extension origin
+- Trusted origins are constrained to local web origins plus explicit extension origins
+  (no wildcard host permissions and no broad auth origin allowlist)
+- Quality gate commands complete before phase handoff
+
+### Source of Truth: Local Auth and Startup Config
+
+Use the repo-root `.env` as the single source of truth, then sync app env files via:
+
+```bash
+pnpm write-env
+```
+
+Required local auth variables:
+
+- `DATABASE_URL`
+- `BETTER_AUTH_SECRET`
+- `BETTER_AUTH_URL` (recommended: `http://localhost:3001`)
+- `BETTER_AUTH_TRUSTED_EXTENSION_ORIGINS` (comma-separated extension origins)
+
+Web URL/port source of truth:
+
+- `packages/shared/src/index.ts` -> `SEARCHPARTY_APP.webDevUrl` (`http://localhost:3001`)
+- `apps/web` dev server runs on port `3001`
+- `apps/extension/wxt.config.ts` `host_permissions` should match web dev URL only
+
+### Known-Good P1 Commands
+
+```bash
+# 1) Sync env
+pnpm write-env
+
+# 2) Run migrations
+pnpm --filter web db:migrate
+
+# 3) Start web + extension (in separate terminals)
+pnpm --filter web dev
+pnpm --filter search-party-extension dev
+
+# 4) Quality gate
+pnpm --filter web lint
+pnpm --filter web test
+pnpm --filter search-party-extension compile
+pnpm --filter search-party-extension build
+```
+
+### Smoke Test Script (Manual)
+
+1. Open extension popup and sidepanel.
+2. Sign up with a new account from popup.
+3. Reload extension and verify session restores to dashboard.
+4. Sign out and verify redirect to `/login`.
+5. Repeat login/logout flow in sidepanel.
+6. Temporarily break DB tables or point to an unmigrated DB and verify auth returns
+   a clear `AUTH_SCHEMA_NOT_READY` message in UI.
+7. Set an invalid web base URL in extension storage and verify UI shows a clear
+   connectivity error (no stack traces).
+8. Remove extension origin from `BETTER_AUTH_TRUSTED_EXTENSION_ORIGINS` and verify
+   UI shows a clear trusted-origin auth error.
+
 ## Phase 2 — Applicant Profiles
 
 ### Goals

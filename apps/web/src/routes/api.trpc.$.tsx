@@ -1,7 +1,8 @@
-import { fetchRequestHandler } from '@trpc/server/adapters/fetch'
-import { trpcRouter } from '@/integrations/trpc/router'
 import { createFileRoute } from '@tanstack/react-router'
+import { fetchRequestHandler } from '@trpc/server/adapters/fetch'
+
 import { env } from '@/env'
+import { trpcRouter } from '@/integrations/trpc/router'
 
 function handler({ request }: { request: Request }) {
   const baseUrl = env.BASE_API_URL

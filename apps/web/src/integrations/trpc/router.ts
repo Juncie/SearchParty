@@ -1,10 +1,8 @@
 import { z } from 'zod'
-
+import { createTRPCRouter, publicProcedure } from './init'
+import type { TRPCRouterRecord } from '@trpc/server'
 import { addTodo, getTodos } from '#/server/todos-store'
 
-import { createTRPCRouter, publicProcedure } from './init'
-
-import type { TRPCRouterRecord } from '@trpc/server'
 
 const todosRouter = {
   list: publicProcedure.query(() => getTodos()),
