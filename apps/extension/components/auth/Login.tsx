@@ -15,12 +15,21 @@ interface LoginProps {
   onSubmit?: (payload: {
     email: string;
     password: string;
-  }) => void;
+  }) => Promise<void> | void;
+  isSubmitting?: boolean;
+  serverError?: string | null;
   setMode: SetAuthScreenMode;
 }
 
-export function Login({ onSubmit, setMode }: LoginProps) {
-  const [error, setError] = useState<string | null>(null);
+export function Login({
+  onSubmit,
+  isSubmitting = false,
+  serverError = null,
+  setMode,
+}: LoginProps) {
+  const [validationError, setValidationError] = useState<
+    string | null
+  >(null);
 
   const handleSubmit = (
     event: FormEvent<HTMLFormElement>
@@ -34,12 +43,14 @@ export function Login({ onSubmit, setMode }: LoginProps) {
     const password = String(formData.get("password") ?? "");
 
     if (!email || !password) {
-      setError("Email and password are required.");
+      setValidationError(
+        "Email and password are required."
+      );
       return;
     }
 
-    setError(null);
-    onSubmit?.({ email, password });
+    setValidationError(null);
+    void onSubmit?.({ email, password });
   };
 
   return (
@@ -70,8 +81,11 @@ export function Login({ onSubmit, setMode }: LoginProps) {
               type="email"
               autoComplete="email"
               placeholder="you@example.com"
-              aria-invalid={Boolean(error)}
+              aria-invalid={Boolean(
+                validationError || serverError
+              )}
               inputSize="lg"
+              disabled={isSubmitting}
             />
           </div>
 
@@ -88,14 +102,22 @@ export function Login({ onSubmit, setMode }: LoginProps) {
               type="password"
               autoComplete="current-password"
               placeholder="Enter your password"
-              aria-invalid={Boolean(error)}
+              aria-invalid={Boolean(
+                validationError || serverError
+              )}
               inputSize="lg"
+              disabled={isSubmitting}
             />
           </div>
 
-          {error ? (
+          {validationError ? (
             <p className="text-xs text-destructive">
-              {error}
+              {validationError}
+            </p>
+          ) : null}
+          {serverError ? (
+            <p className="text-xs text-destructive">
+              {serverError}
             </p>
           ) : null}
 
@@ -103,13 +125,15 @@ export function Login({ onSubmit, setMode }: LoginProps) {
             type="submit"
             className="mt-1 w-full"
             size="lg"
+            disabled={isSubmitting}
           >
-            Login
+            {isSubmitting ? "Signing in..." : "Login"}
           </Button>
           <Button
             type="button"
             variant="outline"
             className="w-full max-w-sm"
+            disabled={isSubmitting}
             onClick={() => {
               setMode("signUp");
             }}
@@ -121,6 +145,7 @@ export function Login({ onSubmit, setMode }: LoginProps) {
             type="button"
             variant="link"
             className="h-auto justify-start px-0 text-xs"
+            disabled={isSubmitting}
             onClick={() => {
               setMode("forgotPassword");
             }}

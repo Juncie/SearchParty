@@ -10,7 +10,7 @@ import {
   RouterError,
   RouterNotFound,
   RouterPending,
-} from '@/components/router/default-router-screens'
+} from '#/components/router/default-router-screens'
 
 export function getRouter() {
   const context = getContext()

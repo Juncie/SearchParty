@@ -1,3 +1,5 @@
+import { useState } from "react";
+
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -15,25 +17,63 @@ interface SignUpProps {
     email: string;
     password: string;
     confirmPassword: string;
-  }) => void;
+  }) => Promise<void> | void;
+  isSubmitting?: boolean;
+  serverError?: string | null;
   setMode: SetAuthScreenMode;
 }
 
-export function SignUp({ onSubmit, setMode }: SignUpProps) {
+export function SignUp({
+  onSubmit,
+  isSubmitting = false,
+  serverError = null,
+  setMode,
+}: SignUpProps) {
+  const [validationError, setValidationError] = useState<
+    string | null
+  >(null);
+
   const handleSubmit = (
     event: React.FormEvent<HTMLFormElement>
   ) => {
     event.preventDefault();
 
     const formData = new FormData(event.currentTarget);
-    const fullName = String(formData.get("fullName") ?? "");
-    const email = String(formData.get("email") ?? "");
+    const fullName = String(
+      formData.get("fullName") ?? ""
+    ).trim();
+    const email = String(
+      formData.get("email") ?? ""
+    ).trim();
     const password = String(formData.get("password") ?? "");
     const confirmPassword = String(
       formData.get("confirmPassword") ?? ""
     );
 
-    onSubmit?.({
+    if (
+      !fullName ||
+      !email ||
+      !password ||
+      !confirmPassword
+    ) {
+      setValidationError("All fields are required.");
+      return;
+    }
+
+    if (password.length < 8) {
+      setValidationError(
+        "Password must be at least 8 characters."
+      );
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      setValidationError("Passwords do not match.");
+      return;
+    }
+
+    setValidationError(null);
+    void onSubmit?.({
       fullName,
       email,
       password,
@@ -55,6 +95,7 @@ export function SignUp({ onSubmit, setMode }: SignUpProps) {
         <form
           className="grid gap-3"
           onSubmit={handleSubmit}
+          noValidate
         >
           <div className="grid gap-1.5">
             <label
@@ -70,6 +111,7 @@ export function SignUp({ onSubmit, setMode }: SignUpProps) {
               placeholder="Jane Doe"
               required
               inputSize="lg"
+              disabled={isSubmitting}
             />
           </div>
 
@@ -88,6 +130,7 @@ export function SignUp({ onSubmit, setMode }: SignUpProps) {
               placeholder="you@example.com"
               required
               inputSize="lg"
+              disabled={isSubmitting}
             />
           </div>
 
@@ -107,6 +150,7 @@ export function SignUp({ onSubmit, setMode }: SignUpProps) {
               minLength={8}
               required
               inputSize="lg"
+              disabled={isSubmitting}
             />
           </div>
 
@@ -126,22 +170,37 @@ export function SignUp({ onSubmit, setMode }: SignUpProps) {
               minLength={8}
               required
               inputSize="lg"
+              disabled={isSubmitting}
             />
           </div>
+          {validationError ? (
+            <p className="text-xs text-destructive">
+              {validationError}
+            </p>
+          ) : null}
+          {serverError ? (
+            <p className="text-xs text-destructive">
+              {serverError}
+            </p>
+          ) : null}
 
           <Button
             variant="default"
             type="submit"
             className="mt-1 w-full"
             size="lg"
+            disabled={isSubmitting}
           >
-            Create account
+            {isSubmitting
+              ? "Creating account..."
+              : "Create account"}
           </Button>
 
           <Button
             type="button"
             variant="link"
             className="h-auto justify-start px-0 text-xs"
+            disabled={isSubmitting}
             onClick={() => {
               setMode("login");
             }}

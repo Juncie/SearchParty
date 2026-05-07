@@ -3,7 +3,11 @@ import { useCallback, useEffect, useState } from "react";
 import type { HealthResponse } from "@searchparty/shared";
 import type { ExtensionSurface } from "@/components/AppRouter";
 import { Button } from "@/components/ui/button";
-import { checkSearchPartyHealth } from "@/lib/searchparty-api";
+import {
+  checkSearchPartyHealth,
+  getAuthSession,
+  signOut,
+} from "@/lib/searchparty-api";
 import { useNavigate } from "@tanstack/react-router";
 
 interface SearchPartyPanelProps {
@@ -21,6 +25,9 @@ export function SearchPartyPanel({
   const [health, setHealth] = useState<HealthState>({
     status: "idle",
   });
+  const [authError, setAuthError] = useState<string | null>(
+    null
+  );
   const [isDark, setIsDark] = useState(() =>
     document.documentElement.classList.contains("dark")
   );
@@ -28,8 +35,18 @@ export function SearchPartyPanel({
 
   const navigate = useNavigate();
 
-  const handleLogout = useCallback(() => {
-    void navigate({ to: "/login" });
+  const handleLogout = useCallback(async () => {
+    setAuthError(null);
+    try {
+      await signOut();
+      void navigate({ to: "/login" });
+    } catch (error) {
+      setAuthError(
+        error instanceof Error
+          ? error.message
+          : "Unable to sign out. Please try again."
+      );
+    }
   }, [navigate]);
 
   const refreshHealth = useCallback(async () => {
@@ -62,8 +79,23 @@ export function SearchPartyPanel({
   }, []);
 
   useEffect(() => {
-    void refreshHealth();
-  }, [refreshHealth]);
+    const verifySession = async () => {
+      try {
+        const currentSession = await getAuthSession();
+        if (!currentSession?.session) {
+          void navigate({ to: "/login" });
+          return;
+        }
+      } catch {
+        void navigate({ to: "/login" });
+        return;
+      }
+
+      await refreshHealth();
+    };
+
+    void verifySession();
+  }, [navigate, refreshHealth]);
 
   return (
     <main
@@ -123,7 +155,14 @@ export function SearchPartyPanel({
           </dl>
         ) : null}
         {health.status === "error" ? (
-          <p className="error-message">{health.message}</p>
+          <p className="error-message text-red-500">
+            {health.message}
+          </p>
+        ) : null}
+        {authError ? (
+          <p className="error-message text-red-500">
+            {authError}
+          </p>
         ) : null}
         <Button
           className="panel-button"
@@ -135,15 +174,6 @@ export function SearchPartyPanel({
             ? "Checking..."
             : "Check connection"}
         </Button>
-      </section>
-
-      <section className="next-card">
-        <p className="island-kicker">Phase Boundary</p>
-        <p>
-          Foundation wiring is active. Profile management,
-          autofill, ATS adapters, and AI generation remain
-          intentionally out of scope.
-        </p>
       </section>
     </main>
   );

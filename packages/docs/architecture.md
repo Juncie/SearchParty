@@ -69,6 +69,7 @@ User
   -> Browser extension: apps/extension
        -> Popup React UI
        -> Side panel React UI
+       -> Better Auth client calls to apps/web (`/api/auth/*`)
        -> Health-check client for apps/web
        -> Content script
        -> Background script
@@ -235,6 +236,8 @@ Core files:
 Server-side auth:
 
 - `betterAuth` enables email/password authentication.
+- `drizzleAdapter` persists auth users/sessions in PostgreSQL via
+  `apps/web/src/db/index.ts`.
 - `tanstackStartCookies` integrates auth cookies with TanStack Start.
 - `/api/auth/*` forwards GET and POST requests to `auth.handler`.
 
@@ -243,9 +246,8 @@ Client-side auth:
 - `authClient` is created with `createAuthClient()`.
 - `BetterAuthHeader` demonstrates `useSession()` and `signOut()`.
 
-Current caveat: the Better Auth configuration does not declare a database
-adapter in the visible source. Auth persistence should be reviewed before the
-application relies on real user accounts.
+Current caveat: production-grade hardening is still pending (email verification
+flow, password reset delivery, and auth rate limiting).
 
 ## Data Layer
 
@@ -267,8 +269,14 @@ Core files:
 The current Drizzle schema defines PostgreSQL tables:
 
 - **`todos`**: `id` (serial PK), `title` (text), `created_at` (timestamp, default now)
-- **`users`**: `id` (uuid PK, default `gen_random_uuid()`), `email` (unique text),
-  `password` (text), `created_at`, `updated_at` (with Drizzle `$onUpdate`)
+- **`user`**: Better Auth user record (`id`, `name`, `email`, `email_verified`,
+  `image`, created and updated timestamps)
+- **`session`**: Better Auth session record (`token`, `expires_at`, `user_id`,
+  metadata fields, timestamps)
+- **`account`**: Better Auth account/provider record, including password hash for
+  email/password auth and optional token fields
+- **`verification`**: Better Auth verification records for one-time values and
+  expiry windows
 
 Database CLI scripts are defined on `@searchparty/db` (`db:generate`, `db:migrate`,
 `db:push`, and so on). `apps/web` forwards the same script names via
@@ -351,7 +359,8 @@ Entrypoints:
 - `apps/extension/components/ui/*` stores shadcn/ui primitives generated for the
   extension app (starting with `button.tsx`).
 - `apps/extension/lib/searchparty-api.ts` calls the web app health endpoint and
-  validates the response with `@searchparty/shared`.
+  Better Auth endpoints (`sign-up`, `sign-in`, `get-session`, `sign-out`) over
+  HTTP with cookie credentials.
 - `apps/extension/lib/utils.ts` exposes the shared `cn()` helper used by
   shadcn/ui components.
 - `apps/extension/components.json` is the shadcn/ui config for extension-local
@@ -368,10 +377,10 @@ under `apps/extension/.wxt/` and should not be edited manually.
 `shadcn/tailwind.css` before the shared UI theme so utility classes and shadcn
 design tokens are available in both popup and side panel surfaces.
 
-Current caveat: the extension is not yet integrated with web app auth, tRPC,
-user profiles, or database-backed data. Login currently validates non-empty
-credentials client-side and routes to `/dashboard`; its implemented
-communication path is still only a health check against `/api/health`.
+Current caveat: extension auth currently targets local development only and
+depends on the local web app being reachable from `host_permissions`. tRPC,
+profile management, and application workflow APIs are still not wired into the
+extension UI.
 
 ## Environment Configuration
 
