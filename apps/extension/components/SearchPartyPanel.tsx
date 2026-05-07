@@ -4,6 +4,7 @@ import type { HealthResponse } from "@searchparty/shared";
 import type { ExtensionSurface } from "@/components/AppRouter";
 import { Button } from "@/components/ui/button";
 import { checkSearchPartyHealth } from "@/lib/searchparty-api";
+import { useNavigate } from "@tanstack/react-router";
 
 interface SearchPartyPanelProps {
   surface: ExtensionSurface;
@@ -24,6 +25,12 @@ export function SearchPartyPanel({
     document.documentElement.classList.contains("dark")
   );
   const isSidePanel = surface === "sidepanel";
+
+  const navigate = useNavigate();
+
+  const handleLogout = useCallback(() => {
+    void navigate({ to: "/login" });
+  }, [navigate]);
 
   const refreshHealth = useCallback(async () => {
     setHealth({ status: "loading" });
@@ -82,6 +89,13 @@ export function SearchPartyPanel({
             onClick={toggleTheme}
           >
             Theme: {isDark ? "Dark" : "Light"}
+          </Button>
+          <Button
+            className="panel-button"
+            type="button"
+            onClick={handleLogout}
+          >
+            Logout
           </Button>
         </div>
       </section>

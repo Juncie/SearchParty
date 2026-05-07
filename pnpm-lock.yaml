@@ -7,10 +7,20 @@ settings:
 importers:
 
   .:
+    dependencies:
+      '@fontsource-variable/dm-sans':
+        specifier: ^5.2.8
+        version: 5.2.8
+      '@fontsource-variable/outfit':
+        specifier: ^5.2.8
+        version: 5.2.8
     devDependencies:
       prettier:
         specifier: ^3.8.3
         version: 3.8.3
+      tsx:
+        specifier: ^4.21.0
+        version: 4.21.0
       turbo:
         specifier: ^2.9.7
         version: 2.9.7
@@ -78,6 +88,9 @@ importers:
       '@fontsource-variable/outfit':
         specifier: ^5.2.8
         version: 5.2.8
+      '@searchparty/db':
+        specifier: workspace:*
+        version: link:../../packages/db
       '@searchparty/shared':
         specifier: workspace:*
         version: link:../../packages/shared
@@ -162,9 +175,6 @@ importers:
       clsx:
         specifier: ^2.1.1
         version: 2.1.1
-      drizzle-kit:
-        specifier: ^0.31.9
-        version: 0.31.10
       drizzle-orm:
         specifier: ^0.45.1
         version: 0.45.2(@types/pg@8.20.0)(kysely@0.28.16)(pg@8.20.0)
@@ -180,9 +190,6 @@ importers:
       nitro:
         specifier: npm:nitro-nightly@latest
         version: nitro-nightly@3.0.260429-beta(chokidar@5.0.0)(dotenv@17.4.2)(drizzle-orm@0.45.2(@types/pg@8.20.0)(kysely@0.28.16)(pg@8.20.0))(giget@3.2.0)(jiti@2.6.1)(lru-cache@11.3.5)(vite@8.0.10(@types/node@22.19.17)(esbuild@0.27.7)(jiti@2.6.1)(tsx@4.21.0))(xml2js@0.6.2)
-      pg:
-        specifier: ^8.16.3
-        version: 8.20.0
       radix-ui:
         specifier: ^1.4.3
         version: 1.4.3(@types/react-dom@19.2.3(@types/react@19.2.14))(@types/react@19.2.14)(react-dom@19.2.5(react@19.2.5))(react@19.2.5)
@@ -235,9 +242,6 @@ importers:
       '@types/node':
         specifier: ^22.10.2
         version: 22.19.17
-      '@types/pg':
-        specifier: ^8.15.6
-        version: 8.20.0
       '@types/react':
         specifier: ^19.2.0
         version: 19.2.14
@@ -271,6 +275,31 @@ importers:
       vitest:
         specifier: ^4.1.5
         version: 4.1.5(@types/node@22.19.17)(jsdom@28.1.0(@noble/hashes@2.2.0))(msw@2.14.3(@types/node@22.19.17)(typescript@6.0.3))(vite@8.0.10(@types/node@22.19.17)(esbuild@0.27.7)(jiti@2.6.1)(tsx@4.21.0))
+
+  packages/db:
+    dependencies:
+      drizzle-orm:
+        specifier: ^0.45.1
+        version: 0.45.2(@types/pg@8.20.0)(kysely@0.28.16)(pg@8.20.0)
+      pg:
+        specifier: ^8.16.3
+        version: 8.20.0
+    devDependencies:
+      '@types/node':
+        specifier: ^22.10.2
+        version: 22.19.17
+      '@types/pg':
+        specifier: ^8.15.6
+        version: 8.20.0
+      dotenv:
+        specifier: ^17.3.1
+        version: 17.4.2
+      drizzle-kit:
+        specifier: ^0.31.9
+        version: 0.31.10
+      typescript:
+        specifier: ^6.0.2
+        version: 6.0.3
 
   packages/shared:
     dependencies:
@@ -13647,8 +13676,8 @@ snapshots:
   solid-js@1.9.12:
     dependencies:
       csstype: 3.2.3
-      seroval: 1.5.2
-      seroval-plugins: 1.5.2(seroval@1.5.2)
+      seroval: 1.5.4
+      seroval-plugins: 1.5.4(seroval@1.5.4)
 
   sonic-boom@4.2.1:
     dependencies:

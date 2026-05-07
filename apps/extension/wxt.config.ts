@@ -6,7 +6,7 @@ export default defineConfig({
     name: "SearchParty",
     description: "Foundation extension for SearchParty job application workflows.",
     permissions: ["sidePanel", "storage"],
-    host_permissions: ["http://localhost:4310/*"],
+    host_permissions: ["http://localhost:3001/*"],
     side_panel: {
       default_path: "sidepanel.html",
     },

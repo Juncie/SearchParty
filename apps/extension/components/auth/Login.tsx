@@ -9,26 +9,28 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import type { SetAuthScreenMode } from "@/components/auth/auth-screen-mode";
 
 interface LoginProps {
   onSubmit?: (payload: {
     email: string;
     password: string;
   }) => void;
-  onForgotPassword?: () => void;
+  setMode: SetAuthScreenMode;
 }
 
-export function Login({
-  onSubmit,
-  onForgotPassword,
-}: LoginProps) {
+export function Login({ onSubmit, setMode }: LoginProps) {
   const [error, setError] = useState<string | null>(null);
 
-  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = (
+    event: FormEvent<HTMLFormElement>
+  ) => {
     event.preventDefault();
 
     const formData = new FormData(event.currentTarget);
-    const email = String(formData.get("email") ?? "").trim();
+    const email = String(
+      formData.get("email") ?? ""
+    ).trim();
     const password = String(formData.get("password") ?? "");
 
     if (!email || !password) {
@@ -92,18 +94,36 @@ export function Login({
           </div>
 
           {error ? (
-            <p className="text-xs text-destructive">{error}</p>
+            <p className="text-xs text-destructive">
+              {error}
+            </p>
           ) : null}
 
-          <Button type="submit" className="mt-1 w-full" size="lg">
+          <Button
+            type="submit"
+            className="mt-1 w-full"
+            size="lg"
+          >
             Login
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            className="w-full max-w-sm"
+            onClick={() => {
+              setMode("signUp");
+            }}
+          >
+            Create account
           </Button>
 
           <Button
             type="button"
             variant="link"
             className="h-auto justify-start px-0 text-xs"
-            onClick={onForgotPassword}
+            onClick={() => {
+              setMode("forgotPassword");
+            }}
           >
             Forgot password?
           </Button>

@@ -10,7 +10,8 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as ApiHealthRouteImport } from './routes/api/health'
+import { Route as ApiTodosRouteImport } from './routes/api/todos'
+import { Route as ApiHealthIndexRouteImport } from './routes/api/health/index'
 import { Route as ApiTrpcSplatRouteImport } from './routes/api.trpc.$'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
 
@@ -19,9 +20,14 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiHealthRoute = ApiHealthRouteImport.update({
-  id: '/api/health',
-  path: '/api/health',
+const ApiTodosRoute = ApiTodosRouteImport.update({
+  id: '/api/todos',
+  path: '/api/todos',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiHealthIndexRoute = ApiHealthIndexRouteImport.update({
+  id: '/api/health/',
+  path: '/api/health/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiTrpcSplatRoute = ApiTrpcSplatRouteImport.update({
@@ -37,36 +43,46 @@ const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/api/health': typeof ApiHealthRoute
+  '/api/todos': typeof ApiTodosRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/trpc/$': typeof ApiTrpcSplatRoute
+  '/api/health/': typeof ApiHealthIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/api/health': typeof ApiHealthRoute
+  '/api/todos': typeof ApiTodosRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/trpc/$': typeof ApiTrpcSplatRoute
+  '/api/health': typeof ApiHealthIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
-  '/api/health': typeof ApiHealthRoute
+  '/api/todos': typeof ApiTodosRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/trpc/$': typeof ApiTrpcSplatRoute
+  '/api/health/': typeof ApiHealthIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/api/health' | '/api/auth/$' | '/api/trpc/$'
+  fullPaths: '/' | '/api/todos' | '/api/auth/$' | '/api/trpc/$' | '/api/health/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/api/health' | '/api/auth/$' | '/api/trpc/$'
-  id: '__root__' | '/' | '/api/health' | '/api/auth/$' | '/api/trpc/$'
+  to: '/' | '/api/todos' | '/api/auth/$' | '/api/trpc/$' | '/api/health'
+  id:
+    | '__root__'
+    | '/'
+    | '/api/todos'
+    | '/api/auth/$'
+    | '/api/trpc/$'
+    | '/api/health/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  ApiHealthRoute: typeof ApiHealthRoute
+  ApiTodosRoute: typeof ApiTodosRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
   ApiTrpcSplatRoute: typeof ApiTrpcSplatRoute
+  ApiHealthIndexRoute: typeof ApiHealthIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -78,11 +94,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/health': {
-      id: '/api/health'
+    '/api/todos': {
+      id: '/api/todos'
+      path: '/api/todos'
+      fullPath: '/api/todos'
+      preLoaderRoute: typeof ApiTodosRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/health/': {
+      id: '/api/health/'
       path: '/api/health'
-      fullPath: '/api/health'
-      preLoaderRoute: typeof ApiHealthRouteImport
+      fullPath: '/api/health/'
+      preLoaderRoute: typeof ApiHealthIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/trpc/$': {
@@ -104,9 +127,10 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  ApiHealthRoute: ApiHealthRoute,
+  ApiTodosRoute: ApiTodosRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
   ApiTrpcSplatRoute: ApiTrpcSplatRoute,
+  ApiHealthIndexRoute: ApiHealthIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

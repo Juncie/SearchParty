@@ -23,11 +23,10 @@ SearchParty/
         server/          Hono API app
         integrations/    TanStack Query, tRPC, and Better Auth helpers
         lib/             Auth client/server helpers and utilities
-        db/              Drizzle client and PostgreSQL schema
+        db/              Web DB entry (imports `@searchparty/db` client factory)
         db-collections/  TanStack React DB local-only collections
         router.tsx       Router factory and SSR query integration
         styles.css       Tailwind v4 theme and global styles
-      drizzle.config.ts
       vite.config.ts
       package.json
     extension/           WXT browser extension
@@ -41,6 +40,7 @@ SearchParty/
       wxt.config.ts
       package.json
   packages/
+    db/                  Drizzle schema, `createDb`, migrations (server-side only)
     docs/                Architecture and product planning docs
     shared/              Minimal cross-app contracts
     ui/                  Shared CSS theme tokens and global styles
@@ -64,7 +64,7 @@ User
        -> /api/health handled by Hono
        -> /api/trpc/* handled by tRPC
        -> /api/auth/* handled by Better Auth
-       -> Drizzle client and PostgreSQL schema
+       -> `@searchparty/db` Drizzle client (via `apps/web/src/db`)
 
   -> Browser extension: apps/extension
        -> Popup React UI
@@ -109,8 +109,8 @@ Core stack:
 - Hono
 - SuperJSON
 - Better Auth
-- Drizzle ORM and Drizzle Kit
-- PostgreSQL via `pg`
+- Drizzle ORM (also listed under `packages/db` for migrations)
+- PostgreSQL via `pg` (via `@searchparty/db` at runtime)
 - Vite 8
 - Nitro
 - Tailwind CSS v4
@@ -190,11 +190,14 @@ and can grow into additional API routes without creating a separate server.
 Core Hono files:
 
 - `apps/web/src/server/api.ts`
+- `apps/web/src/server/todos-store.ts` (in-memory todos shared by REST + tRPC)
 - `apps/web/src/routes/api/health.ts`
+- `apps/web/src/routes/api/todos.ts`
 
-`api.ts` creates the Hono app and currently exposes `GET /api/health`. The
-health response is created and validated through `@searchparty/shared`.
-`api/health.ts` bridges TanStack Start's file route handler to `api.fetch()`.
+`api.ts` creates the Hono app and currently exposes `GET /api/health` and
+`GET /api/todos`. The health response is created and validated through
+`@searchparty/shared`. `api/health.ts` and `api/todos.ts` bridge TanStack
+Start's file route handlers to `api.fetch()`.
 
 Core tRPC files:
 
@@ -206,7 +209,8 @@ Core tRPC files:
 
 `init.ts` creates the tRPC factory with SuperJSON serialization. `router.ts`
 currently exposes a small `todos` router with `todos.list` and `todos.add`.
-These procedures use an in-memory array and do not persist to PostgreSQL yet.
+Those procedures read and write the same in-memory list as `GET /api/todos`
+via `todos-store.ts`; nothing persists to PostgreSQL yet.
 
 `api.trpc.$.tsx` handles GET and POST requests with `fetchRequestHandler`. The
 client uses `httpBatchStreamLink` and targets `/api/trpc`.
@@ -245,31 +249,35 @@ application relies on real user accounts.
 
 ## Data Layer
 
-PostgreSQL and Drizzle are configured in the web app.
+PostgreSQL and Drizzle live in the **`@searchparty/db`** workspace package.
+Only server-side code (for example `apps/web` API routes and server functions)
+should import `@searchparty/db`. The browser extension does **not** depend on
+`@searchparty/db`; it continues to talk to the web app over HTTP.
 
 Core files:
 
-- `apps/web/src/db/schema.ts`
-- `apps/web/src/db/index.ts`
-- `apps/web/drizzle.config.ts`
+- `packages/db/src/schema.ts` — Drizzle PostgreSQL table definitions
+- `packages/db/src/client.ts` — `createDb(databaseUrl)` factory using
+  `drizzle-orm/node-postgres`
+- `packages/db/src/index.ts` — package exports (`createDb`, schema symbols)
+- `packages/db/drizzle.config.ts` — Drizzle Kit config; loads repo-root
+  `.env.local` / `.env`, writes migrations to `packages/db/drizzle`
+- `apps/web/src/db/index.ts` — constructs `db` with `createDb(env.DATABASE_URL)`
 
-The current Drizzle schema defines one PostgreSQL table:
+The current Drizzle schema defines PostgreSQL tables:
 
-- `todos`
-- `id`: serial primary key
-- `title`: required text
-- `created_at`: timestamp defaulting to now
+- **`todos`**: `id` (serial PK), `title` (text), `created_at` (timestamp, default now)
+- **`users`**: `id` (uuid PK, default `gen_random_uuid()`), `email` (unique text),
+  `password` (text), `created_at`, `updated_at` (with Drizzle `$onUpdate`)
 
-`db/index.ts` creates a Drizzle client from the validated `DATABASE_URL`
-environment variable.
-`drizzle.config.ts` loads `.env.local` and `.env`, writes migrations to
-`./drizzle`, and targets PostgreSQL.
+Database CLI scripts are defined on `@searchparty/db` (`db:generate`, `db:migrate`,
+`db:push`, and so on). `apps/web` forwards the same script names via
+`pnpm --filter @searchparty/db …` so existing `pnpm --filter web db:push` workflows
+keep working.
 
 Current caveats:
 
-- No generated `apps/web/drizzle/` migration files are present in the current
-  repository snapshot.
-- The tRPC todos API does not use the Drizzle table yet.
+- The tRPC todos API does not use the Drizzle tables yet.
 
 `apps/web/src/db-collections/index.ts` defines a TanStack React DB
 `messagesCollection` using `localOnlyCollectionOptions`. This is a browser-side
@@ -367,6 +375,13 @@ communication path is still only a health check against `/api/health`.
 
 ## Environment Configuration
 
+The root `package.json` exposes `pnpm write-env`, which runs
+`packages/scripts/write-env.ts`. It finds the monorepo root using
+`pnpm-workspace.yaml`, reads the root env file (default: `.env`), and copies it
+to each direct child of `apps/` (for example `apps/web/.env` and
+`apps/extension/.env`). Pass another filename as the first argument to copy a
+different root file, or use `--dry-run` to print targets without writing.
+
 `apps/web/src/env.ts` uses `@t3-oss/env-core`.
 
 Declared variables:
@@ -381,8 +396,9 @@ Implemented or configured integrations:
 
 - Better Auth for authentication
 - Hono for backend HTTP routing inside the web app
-- PostgreSQL through `pg` and Drizzle
-- Google Fonts in `styles.css`
+- PostgreSQL through `@searchparty/db` (`pg` + Drizzle ORM)
+- Shared Fontsource variable fonts (`DM Sans` and `Outfit`) imported from
+  `packages/ui/src/styles/theme.css` and resolved from root dependencies
 
 Dependencies present but not yet wired into visible product flows:
 
@@ -424,6 +440,7 @@ pnpm build
 pnpm test
 pnpm lint
 pnpm format
+pnpm write-env
 ```
 
 Useful app-specific commands:
@@ -528,7 +545,8 @@ Architecture is sufficient to begin a beginner extension UI.
 
 Ready now:
 
-- Monorepo boundaries are clear (`apps/web`, `apps/extension`, `packages/shared`).
+- Monorepo boundaries are clear (`apps/web`, `apps/extension`, `packages/shared`,
+  `packages/db` for server-side persistence).
 - Extension shell exists (popup + side panel + background + content scripts).
 - Shared package already provides a cross-app contract pattern.
 
@@ -569,7 +587,7 @@ Likely next architecture steps:
 - Repository type: private `pnpm` and Turbo monorepo
 - Primary applications: `apps/web` and `apps/extension`
 - Documentation location: `packages/docs`
-- Last architecture update: 2026-05-03
+- Last architecture update: 2026-05-06
 
 ## Glossary
 

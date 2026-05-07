@@ -5,7 +5,7 @@ import { ForgotPassword } from "@/components/auth/ForgotPassword";
 import { Login } from "@/components/auth/Login";
 import { SignUp } from "@/components/auth/SignUp";
 import type { ExtensionSurface } from "@/components/AppRouter";
-import { Button } from "@/components/ui/button";
+import type { AuthScreenMode } from "@/components/auth/auth-screen-mode";
 
 interface LoginPageProps {
   surface: ExtensionSurface;
@@ -14,9 +14,7 @@ interface LoginPageProps {
 export function LoginPage({ surface }: LoginPageProps) {
   const navigate = useNavigate();
   const isSidePanel = surface === "sidepanel";
-  const [mode, setMode] = useState<
-    "login" | "forgotPassword" | "signUp"
-  >("login");
+  const [mode, setMode] = useState<AuthScreenMode>("login");
 
   return (
     <main
@@ -49,20 +47,8 @@ export function LoginPage({ surface }: LoginPageProps) {
               onSubmit={() => {
                 void navigate({ to: "/dashboard" });
               }}
-              onForgotPassword={() => {
-                setMode("forgotPassword");
-              }}
+              setMode={setMode}
             />
-            <Button
-              type="button"
-              variant="outline"
-              className="w-full max-w-sm"
-              onClick={() => {
-                setMode("signUp");
-              }}
-            >
-              Create account
-            </Button>
           </div>
         ) : null}
 
@@ -71,9 +57,7 @@ export function LoginPage({ surface }: LoginPageProps) {
             onSubmit={() => {
               setMode("login");
             }}
-            onBackToLogin={() => {
-              setMode("login");
-            }}
+            setMode={setMode}
           />
         ) : null}
 
@@ -82,9 +66,7 @@ export function LoginPage({ surface }: LoginPageProps) {
             onSubmit={() => {
               void navigate({ to: "/dashboard" });
             }}
-            onSignIn={() => {
-              setMode("login");
-            }}
+            setMode={setMode}
           />
         ) : null}
       </section>

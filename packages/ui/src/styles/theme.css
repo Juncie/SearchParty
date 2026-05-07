@@ -1,7 +1,9 @@
-@import url("https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=Outfit:wght@100..900&display=swap");
+@import "@fontsource-variable/dm-sans";
+@import "@fontsource-variable/outfit";
+
 :root {
-  --font-body: "DM Sans", Inter, system-ui, -apple-system;
-  --font-heading: "Outfit", Inter, system-ui, -apple-system;
+  --font-body: "DM Sans Variable", Inter, system-ui, -apple-system;
+  --font-heading: "Outfit Variable", Inter, system-ui, -apple-system;
   --sea-ink: #173a40;
   --sea-ink-soft: #416166;
   --lagoon: #4fb8b2;

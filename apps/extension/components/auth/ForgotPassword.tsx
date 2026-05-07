@@ -7,15 +7,16 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import type { SetAuthScreenMode } from "@/components/auth/auth-screen-mode";
 
 interface ForgotPasswordProps {
   onSubmit?: (payload: { email: string }) => void;
-  onBackToLogin?: () => void;
+  setMode: SetAuthScreenMode;
 }
 
 export function ForgotPassword({
   onSubmit,
-  onBackToLogin,
+  setMode,
 }: ForgotPasswordProps) {
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -63,7 +64,9 @@ export function ForgotPassword({
             type="button"
             variant="link"
             className="h-auto justify-start px-0 text-xs"
-            onClick={onBackToLogin}
+            onClick={() => {
+              setMode("login");
+            }}
           >
             Back to sign in
           </Button>

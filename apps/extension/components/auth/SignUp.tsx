@@ -7,6 +7,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import type { SetAuthScreenMode } from "@/components/auth/auth-screen-mode";
 
 interface SignUpProps {
   onSubmit?: (payload: {
@@ -15,13 +16,10 @@ interface SignUpProps {
     password: string;
     confirmPassword: string;
   }) => void;
-  onSignIn?: () => void;
+  setMode: SetAuthScreenMode;
 }
 
-export function SignUp({
-  onSubmit,
-  onSignIn,
-}: SignUpProps) {
+export function SignUp({ onSubmit, setMode }: SignUpProps) {
   const handleSubmit = (
     event: React.FormEvent<HTMLFormElement>
   ) => {
@@ -144,7 +142,9 @@ export function SignUp({
             type="button"
             variant="link"
             className="h-auto justify-start px-0 text-xs"
-            onClick={onSignIn}
+            onClick={() => {
+              setMode("login");
+            }}
           >
             Already have an account? Sign in
           </Button>

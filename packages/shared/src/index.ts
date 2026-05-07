@@ -2,7 +2,7 @@ import { z } from "zod";
 
 export const SEARCHPARTY_APP = {
   name: "SearchParty",
-  webDevUrl: "http://localhost:4310",
+  webDevUrl: "http://localhost:3001",
 } as const;
 
 export const healthStatusSchema = z.enum(["ok"]);
