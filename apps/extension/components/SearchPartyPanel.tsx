@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 
 import type { HealthResponse } from "@searchparty/shared";
 import type { ExtensionSurface } from "@/components/AppRouter";
+import { ProfileManager } from "@/components/profiles/ProfileManager";
 import { Button } from "@/components/ui/button";
 import {
   checkSearchPartyHealth,
@@ -175,6 +176,8 @@ export function SearchPartyPanel({
             : "Check connection"}
         </Button>
       </section>
+
+      <ProfileManager />
     </main>
   );
 }

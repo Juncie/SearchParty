@@ -24,3 +24,101 @@ export function createHealthResponse(version = "0.0.0"): HealthResponse {
     version,
   });
 }
+
+export const applicantProfileToneSchema = z.enum([
+  "professional",
+  "confident",
+  "friendly",
+]);
+
+export type ApplicantProfileTone = z.infer<
+  typeof applicantProfileToneSchema
+>;
+
+export const workExperienceInputSchema = z.object({
+  company: z.string().trim().min(1, "Company is required"),
+  title: z.string().trim().min(1, "Title is required"),
+  startDate: z.string().trim().min(1, "Start date is required"),
+  endDate: z.string().trim().optional().default(""),
+  description: z.string().trim().optional().default(""),
+  technologies: z.array(z.string().trim().min(1)).default([]),
+  achievements: z.array(z.string().trim().min(1)).default([]),
+});
+
+export const profileSkillInputSchema = z.object({
+  name: z.string().trim().min(1, "Skill name is required"),
+  category: z.string().trim().min(1, "Skill category is required"),
+  yearsOfExperience: z.coerce.number().min(0).max(80).default(0),
+});
+
+export const profileProjectInputSchema = z.object({
+  name: z.string().trim().min(1, "Project name is required"),
+  description: z.string().trim().optional().default(""),
+  technologies: z.array(z.string().trim().min(1)).default([]),
+  url: z.string().trim().url().or(z.literal("")).default(""),
+});
+
+export const applicantProfileInputSchema = z.object({
+  name: z.string().trim().min(1, "Profile name is required"),
+  targetRole: z.string().trim().min(1, "Target role is required"),
+  summary: z.string().trim().optional().default(""),
+  preferredTone: applicantProfileToneSchema.default("professional"),
+  workExperiences: z.array(workExperienceInputSchema).default([]),
+  skills: z.array(profileSkillInputSchema).default([]),
+  projects: z.array(profileProjectInputSchema).default([]),
+});
+
+export type ApplicantProfileInput = z.infer<
+  typeof applicantProfileInputSchema
+>;
+
+export const applicantProfileUpdateSchema =
+  applicantProfileInputSchema.partial();
+
+export type ApplicantProfileUpdate = z.infer<
+  typeof applicantProfileUpdateSchema
+>;
+
+export const workExperienceSchema = workExperienceInputSchema.extend({
+  id: z.string(),
+  profileId: z.string(),
+});
+
+export const profileSkillSchema = profileSkillInputSchema.extend({
+  id: z.string(),
+  profileId: z.string(),
+});
+
+export const profileProjectSchema = profileProjectInputSchema.extend({
+  id: z.string(),
+  profileId: z.string(),
+});
+
+export const applicantProfileSchema = z.object({
+  id: z.string(),
+  userId: z.string(),
+  name: z.string(),
+  targetRole: z.string(),
+  summary: z.string(),
+  preferredTone: applicantProfileToneSchema,
+  createdAt: z.string().datetime(),
+  updatedAt: z.string().datetime(),
+  workExperiences: z.array(workExperienceSchema),
+  skills: z.array(profileSkillSchema),
+  projects: z.array(profileProjectSchema),
+});
+
+export type ApplicantProfile = z.infer<typeof applicantProfileSchema>;
+
+export const applicantProfilesResponseSchema = z.object({
+  profiles: z.array(applicantProfileSchema),
+  activeProfileId: z.string().nullable(),
+});
+
+export type ApplicantProfilesResponse = z.infer<
+  typeof applicantProfilesResponseSchema
+>;
+
+export const activeApplicantProfileInputSchema = z.object({
+  profileId: z.string().nullable(),
+});

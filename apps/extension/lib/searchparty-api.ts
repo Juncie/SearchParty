@@ -1,6 +1,11 @@
 import {
   SEARCHPARTY_APP,
+  applicantProfileSchema,
+  applicantProfilesResponseSchema,
   healthResponseSchema,
+  type ApplicantProfileInput,
+  type ApplicantProfileUpdate,
+  type ApplicantProfilesResponse,
   type HealthResponse,
 } from "@searchparty/shared";
 
@@ -98,9 +103,9 @@ async function callAuthEndpoint<T>(
       ...init,
       headers: hasBody
         ? {
-            "content-type": "application/json",
-            ...(init.headers ?? {}),
-          }
+          "content-type": "application/json",
+          ...(init.headers ?? {}),
+        }
         : init.headers,
     });
   } catch (error) {
@@ -171,4 +176,105 @@ export async function signOut() {
     method: "POST",
     body: JSON.stringify({}),
   });
+}
+
+interface ApiResponseError {
+  message?: string;
+  error?: string;
+}
+
+async function callSearchPartyEndpoint<T>(
+  path: string,
+  init: RequestInit = {}
+): Promise<T> {
+  const webBaseUrl = await getSearchPartyWebBaseUrl();
+  const hasBody = init.body !== undefined && init.body !== null;
+  let response: Response;
+
+  try {
+    response = await fetch(`${webBaseUrl}${path}`, {
+      credentials: "include",
+      ...init,
+      headers: hasBody
+        ? {
+          "content-type": "application/json",
+          ...(init.headers ?? {}),
+        }
+        : init.headers,
+    });
+  } catch (error) {
+    const message =
+      error instanceof Error
+        ? error.message
+        : "Failed to reach SearchParty API.";
+    throw new Error(formatAuthErrorMessage(message, webBaseUrl));
+  }
+
+  if (!response.ok) {
+    let message = `SearchParty API request failed (${response.status}).`;
+
+    try {
+      const payload = (await response.json()) as ApiResponseError;
+      message = payload.message ?? payload.error ?? message;
+    } catch {
+      message = `${message} ${response.statusText}`.trim();
+    }
+
+    throw new Error(formatAuthErrorMessage(message, webBaseUrl));
+  }
+
+  if (response.status === 204) {
+    return undefined as T;
+  }
+
+  return (await response.json()) as T;
+}
+
+export async function listApplicantProfiles(): Promise<ApplicantProfilesResponse> {
+  return applicantProfilesResponseSchema.parse(
+    await callSearchPartyEndpoint<unknown>("/api/profiles/")
+  );
+}
+
+export async function createApplicantProfile(input: ApplicantProfileInput) {
+  const payload = await callSearchPartyEndpoint<unknown>("/api/profiles/", {
+    method: "POST",
+    body: JSON.stringify(input),
+  });
+
+  return applicantProfileSchema.parse(
+    (payload as { profile?: unknown }).profile
+  );
+}
+
+export async function updateApplicantProfile(
+  profileId: string,
+  input: ApplicantProfileUpdate
+) {
+  const payload = await callSearchPartyEndpoint<unknown>(
+    `/api/profiles/${profileId}`,
+    {
+      method: "PATCH",
+      body: JSON.stringify(input),
+    }
+  );
+
+  return applicantProfileSchema.parse(
+    (payload as { profile?: unknown }).profile
+  );
+}
+
+export async function deleteApplicantProfile(profileId: string) {
+  return callSearchPartyEndpoint<void>(`/api/profiles/${profileId}`, {
+    method: "DELETE",
+  });
+}
+
+export async function setActiveApplicantProfile(profileId: string | null) {
+  return applicantProfilesResponseSchema.parse(
+    await callSearchPartyEndpoint<unknown>("/api/profiles/active", {
+      method: "PUT",
+      body: JSON.stringify({ profileId }),
+    })
+  );
 }

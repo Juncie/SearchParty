@@ -311,32 +311,52 @@ pnpm --filter search-party-extension build
 
 Users can manage reusable job profiles.
 
+### Roadmap
+
+1. Shared contracts: define profile, work history, skill, project, active-profile,
+   and API response schemas in `@searchparty/shared`.
+2. Persistence: add Drizzle tables for applicant profiles, nested profile data,
+   and per-user active profile settings.
+3. Web API: expose authenticated CRUD endpoints under `/api/profiles` using
+   Better Auth session cookies.
+4. Extension UI: replace the foundation-only dashboard with profile creation,
+   editing, deletion, and active-profile selection.
+5. Verification: run shared, database, web, and extension type checks plus the
+   extension compile/build gates.
+
 ### Tasks
 
 **Profile CRUD**
 
-- Create profile
-- Edit profile
-- Delete profile
-- Select active profile
+- Create profile — implemented via `POST /api/profiles/` and extension form
+- Edit profile — implemented via `PATCH /api/profiles/$profileId`
+- Delete profile — implemented via `DELETE /api/profiles/$profileId`
+- Select active profile — implemented via `PUT /api/profiles/active`
 
 **Work History**
 
-- Add/edit work experience
-- Add achievements
-- Add tech stacks
+- Add/edit work experience — extension profile editor
+- Add achievements — comma-separated achievement input per experience
+- Add tech stacks — comma-separated technology input per experience
 
 **Skills**
 
-- Add/remove skills
-- Categorize skills
+- Add/remove skills — extension profile editor
+- Categorize skills — skill category field
 
 **Projects**
 
-- Add portfolio projects
-- Add project links
+- Add portfolio projects — extension profile editor
+- Add project links — project URL field
 
 ### Deliverables
+
+- Shared Zod schemas and TypeScript types for applicant profile workflows.
+- Drizzle tables and migration for profiles, work history, skills, projects, and
+  active profile selection.
+- Authenticated TanStack Start API routes under `/api/profiles`.
+- Extension dashboard profile manager with quick-start templates for Frontend,
+  Full Stack, and Shopify/Webflow profiles.
 
 ### Success Criteria
 
@@ -345,6 +365,24 @@ User can create:
 - Frontend profile
 - Full Stack profile
 - Shopify/Webflow profile
+
+### Known-Good P2 Commands
+
+```bash
+# 1) Sync env
+pnpm write-env
+
+# 2) Run profile migration
+pnpm --filter web db:migrate
+
+# 3) Quality gate
+pnpm --filter @searchparty/shared lint
+pnpm --filter @searchparty/db lint
+pnpm --filter web lint
+pnpm --filter web test
+pnpm --filter search-party-extension compile
+pnpm --filter search-party-extension build
+```
 
 ## Phase 3 — Extension Autofill MVP
 
