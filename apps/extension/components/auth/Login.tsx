@@ -9,9 +9,14 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import type { SetAuthScreenMode } from "@/components/auth/auth-screen-mode";
+import type {
+  AuthDensity,
+  SetAuthScreenMode,
+} from "@/components/auth/auth-screen-mode";
+import { cn } from "@/lib/utils";
 
 interface LoginProps {
+  density?: AuthDensity;
   onSubmit?: (payload: {
     email: string;
     password: string;
@@ -22,11 +27,13 @@ interface LoginProps {
 }
 
 export function Login({
+  density = "comfortable",
   onSubmit,
   isSubmitting = false,
   serverError = null,
   setMode,
 }: LoginProps) {
+  const isCompact = density === "compact";
   const [validationError, setValidationError] = useState<
     string | null
   >(null);
@@ -54,7 +61,10 @@ export function Login({
   };
 
   return (
-    <Card className="w-full max-w-sm border-border/80 bg-card/95">
+    <Card
+      size={isCompact ? "sm" : "default"}
+      className="w-full max-w-sm border-border/80 bg-card/95"
+    >
       <CardHeader>
         <CardTitle>Login</CardTitle>
         <CardDescription>
@@ -64,11 +74,16 @@ export function Login({
 
       <CardContent>
         <form
-          className="grid gap-3"
+          className={cn("grid", isCompact ? "gap-2" : "gap-3")}
           onSubmit={handleSubmit}
           noValidate
         >
-          <div className="grid gap-1.5">
+          <div
+            className={cn(
+              "grid",
+              isCompact ? "gap-1" : "gap-1.5",
+            )}
+          >
             <label
               htmlFor="login-email"
               className="text-xs font-medium text-muted-foreground"
@@ -84,12 +99,17 @@ export function Login({
               aria-invalid={Boolean(
                 validationError || serverError
               )}
-              inputSize="lg"
+              inputSize={isCompact ? "default" : "lg"}
               disabled={isSubmitting}
             />
           </div>
 
-          <div className="grid gap-1.5">
+          <div
+            className={cn(
+              "grid",
+              isCompact ? "gap-1" : "gap-1.5",
+            )}
+          >
             <label
               htmlFor="login-password"
               className="text-xs font-medium text-muted-foreground"
@@ -105,7 +125,7 @@ export function Login({
               aria-invalid={Boolean(
                 validationError || serverError
               )}
-              inputSize="lg"
+              inputSize={isCompact ? "default" : "lg"}
               disabled={isSubmitting}
             />
           </div>
@@ -123,8 +143,8 @@ export function Login({
 
           <Button
             type="submit"
-            className="mt-1 w-full"
-            size="lg"
+            className={cn("w-full", !isCompact && "mt-1")}
+            size={isCompact ? "default" : "lg"}
             disabled={isSubmitting}
           >
             {isSubmitting ? "Signing in..." : "Login"}
@@ -133,6 +153,7 @@ export function Login({
             type="button"
             variant="outline"
             className="w-full max-w-sm"
+            size={isCompact ? "default" : "lg"}
             disabled={isSubmitting}
             onClick={() => {
               setMode("signUp");

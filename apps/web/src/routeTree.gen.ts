@@ -12,10 +12,11 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ApiTodosRouteImport } from './routes/api/todos'
 import { Route as ApiProfilesIndexRouteImport } from './routes/api/profiles/index'
+import { Route as ApiHealthIndexRouteImport } from './routes/api/health/index'
+import { Route as ApiUserMeRouteImport } from './routes/api/user/me'
+import { Route as ApiTrpcSplatRouteImport } from './routes/api.trpc.$'
 import { Route as ApiProfilesActiveRouteImport } from './routes/api/profiles/active'
 import { Route as ApiProfilesProfileIdRouteImport } from './routes/api/profiles/$profileId'
-import { Route as ApiHealthIndexRouteImport } from './routes/api/health/index'
-import { Route as ApiTrpcSplatRouteImport } from './routes/api.trpc.$'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
 
 const IndexRoute = IndexRouteImport.update({
@@ -33,6 +34,21 @@ const ApiProfilesIndexRoute = ApiProfilesIndexRouteImport.update({
   path: '/api/profiles/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiHealthIndexRoute = ApiHealthIndexRouteImport.update({
+  id: '/api/health/',
+  path: '/api/health/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiUserMeRoute = ApiUserMeRouteImport.update({
+  id: '/api/user/me',
+  path: '/api/user/me',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiTrpcSplatRoute = ApiTrpcSplatRouteImport.update({
+  id: '/api/trpc/$',
+  path: '/api/trpc/$',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiProfilesActiveRoute = ApiProfilesActiveRouteImport.update({
   id: '/api/profiles/active',
   path: '/api/profiles/active',
@@ -41,16 +57,6 @@ const ApiProfilesActiveRoute = ApiProfilesActiveRouteImport.update({
 const ApiProfilesProfileIdRoute = ApiProfilesProfileIdRouteImport.update({
   id: '/api/profiles/$profileId',
   path: '/api/profiles/$profileId',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiHealthIndexRoute = ApiHealthIndexRouteImport.update({
-  id: '/api/health/',
-  path: '/api/health/',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiTrpcSplatRoute = ApiTrpcSplatRouteImport.update({
-  id: '/api/trpc/$',
-  path: '/api/trpc/$',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
@@ -62,76 +68,83 @@ const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/api/todos': typeof ApiTodosRoute
-  '/api/profiles/': typeof ApiProfilesIndexRoute
-  '/api/profiles/active': typeof ApiProfilesActiveRoute
-  '/api/profiles/$profileId': typeof ApiProfilesProfileIdRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
+  '/api/profiles/$profileId': typeof ApiProfilesProfileIdRoute
+  '/api/profiles/active': typeof ApiProfilesActiveRoute
   '/api/trpc/$': typeof ApiTrpcSplatRoute
+  '/api/user/me': typeof ApiUserMeRoute
   '/api/health/': typeof ApiHealthIndexRoute
+  '/api/profiles/': typeof ApiProfilesIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/api/todos': typeof ApiTodosRoute
-  '/api/profiles': typeof ApiProfilesIndexRoute
-  '/api/profiles/active': typeof ApiProfilesActiveRoute
-  '/api/profiles/$profileId': typeof ApiProfilesProfileIdRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
+  '/api/profiles/$profileId': typeof ApiProfilesProfileIdRoute
+  '/api/profiles/active': typeof ApiProfilesActiveRoute
   '/api/trpc/$': typeof ApiTrpcSplatRoute
+  '/api/user/me': typeof ApiUserMeRoute
   '/api/health': typeof ApiHealthIndexRoute
+  '/api/profiles': typeof ApiProfilesIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/api/todos': typeof ApiTodosRoute
-  '/api/profiles/': typeof ApiProfilesIndexRoute
-  '/api/profiles/active': typeof ApiProfilesActiveRoute
-  '/api/profiles/$profileId': typeof ApiProfilesProfileIdRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
+  '/api/profiles/$profileId': typeof ApiProfilesProfileIdRoute
+  '/api/profiles/active': typeof ApiProfilesActiveRoute
   '/api/trpc/$': typeof ApiTrpcSplatRoute
+  '/api/user/me': typeof ApiUserMeRoute
   '/api/health/': typeof ApiHealthIndexRoute
+  '/api/profiles/': typeof ApiProfilesIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
-  | '/'
-  | '/api/todos'
-  | '/api/profiles/'
-  | '/api/profiles/active'
-  | '/api/profiles/$profileId'
-  | '/api/auth/$'
-  | '/api/trpc/$'
-  | '/api/health/'
+    | '/'
+    | '/api/todos'
+    | '/api/auth/$'
+    | '/api/profiles/$profileId'
+    | '/api/profiles/active'
+    | '/api/trpc/$'
+    | '/api/user/me'
+    | '/api/health/'
+    | '/api/profiles/'
   fileRoutesByTo: FileRoutesByTo
   to:
-  | '/'
-  | '/api/todos'
-  | '/api/profiles'
-  | '/api/profiles/active'
-  | '/api/profiles/$profileId'
-  | '/api/auth/$'
-  | '/api/trpc/$'
-  | '/api/health'
+    | '/'
+    | '/api/todos'
+    | '/api/auth/$'
+    | '/api/profiles/$profileId'
+    | '/api/profiles/active'
+    | '/api/trpc/$'
+    | '/api/user/me'
+    | '/api/health'
+    | '/api/profiles'
   id:
-  | '__root__'
-  | '/'
-  | '/api/todos'
-  | '/api/profiles/'
-  | '/api/profiles/active'
-  | '/api/profiles/$profileId'
-  | '/api/auth/$'
-  | '/api/trpc/$'
-  | '/api/health/'
+    | '__root__'
+    | '/'
+    | '/api/todos'
+    | '/api/auth/$'
+    | '/api/profiles/$profileId'
+    | '/api/profiles/active'
+    | '/api/trpc/$'
+    | '/api/user/me'
+    | '/api/health/'
+    | '/api/profiles/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   ApiTodosRoute: typeof ApiTodosRoute
-  ApiProfilesIndexRoute: typeof ApiProfilesIndexRoute
-  ApiProfilesActiveRoute: typeof ApiProfilesActiveRoute
-  ApiProfilesProfileIdRoute: typeof ApiProfilesProfileIdRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
+  ApiProfilesProfileIdRoute: typeof ApiProfilesProfileIdRoute
+  ApiProfilesActiveRoute: typeof ApiProfilesActiveRoute
   ApiTrpcSplatRoute: typeof ApiTrpcSplatRoute
+  ApiUserMeRoute: typeof ApiUserMeRoute
   ApiHealthIndexRoute: typeof ApiHealthIndexRoute
+  ApiProfilesIndexRoute: typeof ApiProfilesIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -157,6 +170,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiProfilesIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/health/': {
+      id: '/api/health/'
+      path: '/api/health'
+      fullPath: '/api/health/'
+      preLoaderRoute: typeof ApiHealthIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/user/me': {
+      id: '/api/user/me'
+      path: '/api/user/me'
+      fullPath: '/api/user/me'
+      preLoaderRoute: typeof ApiUserMeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/trpc/$': {
+      id: '/api/trpc/$'
+      path: '/api/trpc/$'
+      fullPath: '/api/trpc/$'
+      preLoaderRoute: typeof ApiTrpcSplatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/profiles/active': {
       id: '/api/profiles/active'
       path: '/api/profiles/active'
@@ -169,20 +203,6 @@ declare module '@tanstack/react-router' {
       path: '/api/profiles/$profileId'
       fullPath: '/api/profiles/$profileId'
       preLoaderRoute: typeof ApiProfilesProfileIdRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/health/': {
-      id: '/api/health/'
-      path: '/api/health'
-      fullPath: '/api/health/'
-      preLoaderRoute: typeof ApiHealthIndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/trpc/$': {
-      id: '/api/trpc/$'
-      path: '/api/trpc/$'
-      fullPath: '/api/trpc/$'
-      preLoaderRoute: typeof ApiTrpcSplatRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/auth/$': {
@@ -198,12 +218,13 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   ApiTodosRoute: ApiTodosRoute,
-  ApiProfilesIndexRoute: ApiProfilesIndexRoute,
-  ApiProfilesActiveRoute: ApiProfilesActiveRoute,
-  ApiProfilesProfileIdRoute: ApiProfilesProfileIdRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
+  ApiProfilesProfileIdRoute: ApiProfilesProfileIdRoute,
+  ApiProfilesActiveRoute: ApiProfilesActiveRoute,
   ApiTrpcSplatRoute: ApiTrpcSplatRoute,
+  ApiUserMeRoute: ApiUserMeRoute,
   ApiHealthIndexRoute: ApiHealthIndexRoute,
+  ApiProfilesIndexRoute: ApiProfilesIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

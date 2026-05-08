@@ -122,3 +122,28 @@ export type ApplicantProfilesResponse = z.infer<
 export const activeApplicantProfileInputSchema = z.object({
   profileId: z.string().nullable(),
 });
+
+export const currentUserSchema = z.object({
+  id: z.string(),
+  email: z.string().email(),
+  name: z.string(),
+  image: z.string().nullable().optional(),
+});
+
+export type CurrentUser = z.infer<typeof currentUserSchema>;
+
+export const currentUserResponseSchema = z.object({
+  user: currentUserSchema,
+});
+
+export type CurrentUserResponse = z.infer<
+  typeof currentUserResponseSchema
+>;
+
+export const updateCurrentUserInputSchema = z.object({
+  name: z.string().trim().min(1, "Name is required"),
+});
+
+export type UpdateCurrentUserInput = z.infer<
+  typeof updateCurrentUserInputSchema
+>;

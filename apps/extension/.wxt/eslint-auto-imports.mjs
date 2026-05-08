@@ -14,6 +14,7 @@ const globals = {
   "ContentScriptUi": true,
   "ContentScriptUiOptions": true,
   "ExtensionSurface": true,
+  "HeroCard": true,
   "IframeContentScriptUi": true,
   "IframeContentScriptUiOptions": true,
   "InjectScriptOptions": true,

@@ -7,17 +7,24 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import type { SetAuthScreenMode } from "@/components/auth/auth-screen-mode";
+import type {
+  AuthDensity,
+  SetAuthScreenMode,
+} from "@/components/auth/auth-screen-mode";
+import { cn } from "@/lib/utils";
 
 interface ForgotPasswordProps {
+  density?: AuthDensity;
   onSubmit?: (payload: { email: string }) => void;
   setMode: SetAuthScreenMode;
 }
 
 export function ForgotPassword({
+  density = "comfortable",
   onSubmit,
   setMode,
 }: ForgotPasswordProps) {
+  const isCompact = density === "compact";
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
@@ -28,7 +35,10 @@ export function ForgotPassword({
   };
 
   return (
-    <Card className="w-full max-w-sm border-border/80 bg-card/95">
+    <Card
+      size={isCompact ? "sm" : "default"}
+      className="w-full max-w-sm border-border/80 bg-card/95"
+    >
       <CardHeader>
         <CardTitle>Reset password</CardTitle>
         <CardDescription>
@@ -37,8 +47,16 @@ export function ForgotPassword({
       </CardHeader>
 
       <CardContent>
-        <form className="grid gap-3" onSubmit={handleSubmit}>
-          <div className="grid gap-1.5">
+        <form
+          className={cn("grid", isCompact ? "gap-2" : "gap-3")}
+          onSubmit={handleSubmit}
+        >
+          <div
+            className={cn(
+              "grid",
+              isCompact ? "gap-1" : "gap-1.5",
+            )}
+          >
             <label
               htmlFor="forgot-password-email"
               className="text-xs font-medium text-muted-foreground"
@@ -52,11 +70,15 @@ export function ForgotPassword({
               autoComplete="email"
               placeholder="you@example.com"
               required
-              inputSize="lg"
+              inputSize={isCompact ? "default" : "lg"}
             />
           </div>
 
-          <Button type="submit" className="mt-1 w-full" size="lg">
+          <Button
+            type="submit"
+            className={cn("w-full", !isCompact && "mt-1")}
+            size={isCompact ? "default" : "lg"}
+          >
             Send reset link
           </Button>
 

@@ -9,9 +9,14 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import type { SetAuthScreenMode } from "@/components/auth/auth-screen-mode";
+import type {
+  AuthDensity,
+  SetAuthScreenMode,
+} from "@/components/auth/auth-screen-mode";
+import { cn } from "@/lib/utils";
 
 interface SignUpProps {
+  density?: AuthDensity;
   onSubmit?: (payload: {
     fullName: string;
     email: string;
@@ -24,11 +29,13 @@ interface SignUpProps {
 }
 
 export function SignUp({
+  density = "comfortable",
   onSubmit,
   isSubmitting = false,
   serverError = null,
   setMode,
 }: SignUpProps) {
+  const isCompact = density === "compact";
   const [validationError, setValidationError] = useState<
     string | null
   >(null);
@@ -82,7 +89,10 @@ export function SignUp({
   };
 
   return (
-    <Card className="w-full max-w-sm border-border/80 bg-card/95">
+    <Card
+      size={isCompact ? "sm" : "default"}
+      className="w-full max-w-sm border-border/80 bg-card/95"
+    >
       <CardHeader>
         <CardTitle>Create account</CardTitle>
         <CardDescription>
@@ -93,11 +103,16 @@ export function SignUp({
 
       <CardContent>
         <form
-          className="grid gap-3"
+          className={cn("grid", isCompact ? "gap-2" : "gap-3")}
           onSubmit={handleSubmit}
           noValidate
         >
-          <div className="grid gap-1.5">
+          <div
+            className={cn(
+              "grid",
+              isCompact ? "gap-1" : "gap-1.5",
+            )}
+          >
             <label
               htmlFor="signup-full-name"
               className="text-xs font-medium text-muted-foreground"
@@ -110,12 +125,17 @@ export function SignUp({
               autoComplete="name"
               placeholder="Jane Doe"
               required
-              inputSize="lg"
+              inputSize={isCompact ? "default" : "lg"}
               disabled={isSubmitting}
             />
           </div>
 
-          <div className="grid gap-1.5">
+          <div
+            className={cn(
+              "grid",
+              isCompact ? "gap-1" : "gap-1.5",
+            )}
+          >
             <label
               htmlFor="signup-email"
               className="text-xs font-medium text-muted-foreground"
@@ -129,12 +149,17 @@ export function SignUp({
               autoComplete="email"
               placeholder="you@example.com"
               required
-              inputSize="lg"
+              inputSize={isCompact ? "default" : "lg"}
               disabled={isSubmitting}
             />
           </div>
 
-          <div className="grid gap-1.5">
+          <div
+            className={cn(
+              "grid",
+              isCompact ? "gap-1" : "gap-1.5",
+            )}
+          >
             <label
               htmlFor="signup-password"
               className="text-xs font-medium text-muted-foreground"
@@ -149,12 +174,17 @@ export function SignUp({
               placeholder="Create a password"
               minLength={8}
               required
-              inputSize="lg"
+              inputSize={isCompact ? "default" : "lg"}
               disabled={isSubmitting}
             />
           </div>
 
-          <div className="grid gap-1.5">
+          <div
+            className={cn(
+              "grid",
+              isCompact ? "gap-1" : "gap-1.5",
+            )}
+          >
             <label
               htmlFor="signup-confirm-password"
               className="text-xs font-medium text-muted-foreground"
@@ -169,7 +199,7 @@ export function SignUp({
               placeholder="Re-enter password"
               minLength={8}
               required
-              inputSize="lg"
+              inputSize={isCompact ? "default" : "lg"}
               disabled={isSubmitting}
             />
           </div>
@@ -187,8 +217,8 @@ export function SignUp({
           <Button
             variant="default"
             type="submit"
-            className="mt-1 w-full"
-            size="lg"
+            className={cn("w-full", !isCompact && "mt-1")}
+            size={isCompact ? "default" : "lg"}
             disabled={isSubmitting}
           >
             {isSubmitting

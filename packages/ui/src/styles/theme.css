@@ -2,8 +2,10 @@
 @import "@fontsource-variable/outfit";
 
 :root {
-  --font-body: "DM Sans Variable", Inter, system-ui, -apple-system;
-  --font-heading: "Outfit Variable", Inter, system-ui, -apple-system;
+  --font-body:
+    "DM Sans Variable", Inter, system-ui, -apple-system;
+  --font-heading:
+    "Outfit Variable", Inter, system-ui, -apple-system;
   --sea-ink: #173a40;
   --sea-ink-soft: #416166;
   --lagoon: #4fb8b2;
@@ -23,6 +25,11 @@
   --link-bg-hover: rgba(255, 255, 255, 0.9);
   --hero-a: rgba(79, 184, 178, 0.36);
   --hero-b: rgba(47, 106, 74, 0.2);
+  --page-top: color-mix(in oklab, var(--sand) 68%, white);
+  --hero-c: rgba(79, 184, 178, 0.1);
+  --wash-a: rgba(255, 255, 255, 0.8);
+  --wash-b: rgba(79, 184, 178, 0.2);
+  --wash-c: rgba(47, 106, 74, 0.14);
 
   --background: oklch(1 0 0);
   --foreground: oklch(0.148 0.004 228.8);
@@ -103,8 +110,13 @@
   --chip-bg: rgba(13, 28, 32, 0.9);
   --chip-line: rgba(141, 229, 219, 0.24);
   --link-bg-hover: rgba(24, 44, 49, 0.8);
-  --hero-a: rgba(96, 215, 207, 0.18);
-  --hero-b: rgba(110, 200, 154, 0.12);
+  --page-top: var(--sand);
+  --hero-a: rgba(96, 215, 207, 0.08);
+  --hero-b: rgba(110, 200, 154, 0.05);
+  --hero-c: rgba(96, 215, 207, 0.04);
+  --wash-a: rgba(96, 215, 207, 0.08);
+  --wash-b: rgba(96, 215, 207, 0.06);
+  --wash-c: rgba(110, 200, 154, 0.04);
 
   --background: oklch(0.148 0.004 228.8);
   --foreground: oklch(0.987 0.002 197.1);
@@ -190,12 +202,12 @@ body {
     ),
     radial-gradient(
       720px 380px at 50% 115%,
-      rgba(79, 184, 178, 0.1),
+      var(--hero-c),
       transparent 68%
     ),
     linear-gradient(
       180deg,
-      color-mix(in oklab, var(--sand) 68%, white) 0%,
+      var(--page-top) 0%,
       var(--foam) 44%,
       var(--bg-base) 100%
     );
@@ -213,17 +225,17 @@ body {
     background:
       radial-gradient(
         circle at 20% 15%,
-        rgba(255, 255, 255, 0.8),
+        var(--wash-a),
         transparent 34%
       ),
       radial-gradient(
         circle at 78% 26%,
-        rgba(79, 184, 178, 0.2),
+        var(--wash-b),
         transparent 42%
       ),
       radial-gradient(
         circle at 42% 82%,
-        rgba(47, 106, 74, 0.14),
+        var(--wash-c),
         transparent 36%
       );
   }
@@ -252,6 +264,19 @@ body {
       transparent 78%
     );
   }
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  text-transform: capitalize;
+}
+
+button {
+  cursor: pointer;
 }
 
 a {

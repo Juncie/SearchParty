@@ -3,6 +3,7 @@ export {}
 declare global {
   const AppRouter: typeof import('/home/juncie/projects/SearchParty/apps/extension/components/AppRouter').AppRouter
   const ContentScriptContext: typeof import('wxt/utils/content-script-context').ContentScriptContext
+  const HeroCard: typeof import('/home/juncie/projects/SearchParty/apps/extension/components/HeroCard').HeroCard
   const InvalidMatchPattern: typeof import('wxt/utils/match-patterns').InvalidMatchPattern
   const MatchPattern: typeof import('wxt/utils/match-patterns').MatchPattern
   const SearchPartyPanel: typeof import('/home/juncie/projects/SearchParty/apps/extension/components/SearchPartyPanel').SearchPartyPanel
@@ -58,6 +59,6 @@ declare global {
   export type { ScriptPublicPath, InjectScriptOptions } from 'wxt/utils/inject-script'
   import('wxt/utils/inject-script')
   // @ts-ignore
-  export type { ExtensionSurface } from '/home/juncie/projects/SearchParty/apps/extension/components/AppRouter'
-  import('/home/juncie/projects/SearchParty/apps/extension/components/AppRouter')
+  export type { ExtensionSurface } from '/home/juncie/projects/SearchParty/apps/extension/components/extension-surface'
+  import('/home/juncie/projects/SearchParty/apps/extension/components/extension-surface')
 }

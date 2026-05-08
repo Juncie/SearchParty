@@ -4,13 +4,17 @@ import { useEffect, useMemo, useState } from "react";
 import { ForgotPassword } from "@/components/auth/ForgotPassword";
 import { Login } from "@/components/auth/Login";
 import { SignUp } from "@/components/auth/SignUp";
-import type { ExtensionSurface } from "@/components/AppRouter";
-import type { AuthScreenMode } from "@/components/auth/auth-screen-mode";
+import type {
+  AuthDensity,
+  AuthScreenMode,
+} from "@/components/auth/auth-screen-mode";
+import type { ExtensionSurface } from "@/components/extension-surface";
 import {
   getAuthSession,
   signInWithEmail,
   signUpWithEmail,
 } from "@/lib/searchparty-api";
+import { cn } from "@/lib/utils";
 
 interface LoginPageProps {
   surface: ExtensionSurface;
@@ -19,6 +23,9 @@ interface LoginPageProps {
 export function LoginPage({ surface }: LoginPageProps) {
   const navigate = useNavigate();
   const isSidePanel = surface === "sidepanel";
+  const density: AuthDensity = isSidePanel
+    ? "comfortable"
+    : "compact";
   const [mode, setMode] = useState<AuthScreenMode>("login");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isCheckingSession, setIsCheckingSession] =
@@ -116,46 +123,49 @@ export function LoginPage({ surface }: LoginPageProps) {
 
   if (isCheckingSession) {
     return (
-      <main
-        className={
-          isSidePanel ? "shell shell-sidepanel" : "shell"
-        }
+      <div
+        className={cn(
+          "auth-layout-root",
+          isSidePanel && "justify-center py-10",
+        )}
       >
-        <section className="grid w-full justify-items-center gap-3">
+        <div
+          className={cn(
+            "flex min-h-0 w-full flex-1 flex-col items-center justify-center gap-2 py-4",
+          )}
+        >
           <p className="island-kicker">Search Party</p>
-          <p className="text-sm text-muted-foreground">
+          <p className="auth-session-check__hint">
             Checking your session...
           </p>
-        </section>
-      </main>
+        </div>
+      </div>
     );
   }
 
   return (
-    <main
-      className={
-        isSidePanel
-          ? "shell shell-sidepanel place-items-center"
-          : "shell"
-      }
+    <div
+      className={cn(
+        "auth-layout-root",
+        isSidePanel && "justify-center",
+      )}
     >
-      <section className="grid w-full justify-items-center gap-5">
+      <div className="auth-layout">
         <img
           src="/searchparty.svg"
           alt="SearchParty"
-          className="h-14 w-14 rounded-2xl"
+          className="auth-layout__logo"
         />
-        <div className="grid w-full justify-items-center gap-2 text-center">
+        <div className="auth-layout__intro">
           <p className="island-kicker">Search Party</p>
-          <h1 className="display-title text-2xl">
-            {heading}
-          </h1>
-          <p className="lede max-w-xs">{description}</p>
+          <h1 className="auth-layout__title">{heading}</h1>
+          <p className="auth-layout__lede lede">{description}</p>
         </div>
 
         {mode === "login" ? (
-          <div className="grid w-full justify-items-center gap-2">
+          <div className="auth-layout__form-slot">
             <Login
+              density={density}
               onSubmit={handleLoginSubmit}
               isSubmitting={isSubmitting}
               serverError={
@@ -170,32 +180,38 @@ export function LoginPage({ surface }: LoginPageProps) {
         ) : null}
 
         {mode === "forgotPassword" ? (
-          <ForgotPassword
-            onSubmit={() => {
-              setServerError(null);
-              setMode("login");
-            }}
-            setMode={(nextMode) => {
-              setServerError(null);
-              setMode(nextMode);
-            }}
-          />
+          <div className="auth-layout__form-slot">
+            <ForgotPassword
+              density={density}
+              onSubmit={() => {
+                setServerError(null);
+                setMode("login");
+              }}
+              setMode={(nextMode) => {
+                setServerError(null);
+                setMode(nextMode);
+              }}
+            />
+          </div>
         ) : null}
 
         {mode === "signUp" ? (
-          <SignUp
-            onSubmit={handleSignUpSubmit}
-            isSubmitting={isSubmitting}
-            serverError={
-              mode === "signUp" ? serverError : null
-            }
-            setMode={(nextMode) => {
-              setServerError(null);
-              setMode(nextMode);
-            }}
-          />
+          <div className="auth-layout__form-slot">
+            <SignUp
+              density={density}
+              onSubmit={handleSignUpSubmit}
+              isSubmitting={isSubmitting}
+              serverError={
+                mode === "signUp" ? serverError : null
+              }
+              setMode={(nextMode) => {
+                setServerError(null);
+                setMode(nextMode);
+              }}
+            />
+          </div>
         ) : null}
-      </section>
-    </main>
+      </div>
+    </div>
   );
 }

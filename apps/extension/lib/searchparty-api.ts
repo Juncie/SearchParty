@@ -2,11 +2,14 @@ import {
   SEARCHPARTY_APP,
   applicantProfileSchema,
   applicantProfilesResponseSchema,
+  currentUserResponseSchema,
   healthResponseSchema,
   type ApplicantProfileInput,
   type ApplicantProfileUpdate,
   type ApplicantProfilesResponse,
+  type CurrentUserResponse,
   type HealthResponse,
+  type UpdateCurrentUserInput,
 } from "@searchparty/shared";
 
 const webBaseUrlStorageKey = "searchPartyWebBaseUrl";
@@ -277,4 +280,21 @@ export async function setActiveApplicantProfile(profileId: string | null) {
       body: JSON.stringify({ profileId }),
     })
   );
+}
+
+export async function updateCurrentUser(
+  input: UpdateCurrentUserInput
+): Promise<CurrentUserResponse> {
+  return currentUserResponseSchema.parse(
+    await callSearchPartyEndpoint<unknown>("/api/user/me", {
+      method: "PATCH",
+      body: JSON.stringify(input),
+    })
+  );
+}
+
+export async function deleteCurrentUserAccount() {
+  return callSearchPartyEndpoint<void>("/api/user/me", {
+    method: "DELETE",
+  });
 }
