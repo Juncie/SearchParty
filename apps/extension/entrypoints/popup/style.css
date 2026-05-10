@@ -12,6 +12,14 @@
   --sp-auth-gap-md: 0.75rem;
   --sp-auth-gap-lg: 1rem;
   --sp-auth-gap-xl: 1.25rem;
+  /*
+   * Auth layout container-query breakpoints.
+   *
+   * Note: CSS Container Queries (and @media) do not accept var() in their
+   * size-query conditions per spec — lightningcss enforces this at build
+   * time. The literals below MUST stay in sync with the @container rules
+   * further down in this file (sm: 18rem, md: 22rem, lg: 28rem).
+   */
   --sp-auth-cq-sm: 18rem;
   --sp-auth-cq-md: 22rem;
   --sp-auth-cq-lg: 28rem;
@@ -33,7 +41,9 @@
   --color-accent: var(--accent);
   --color-accent-foreground: var(--accent-foreground);
   --color-destructive: var(--destructive);
-  --color-destructive-foreground: var(--destructive-foreground);
+  --color-destructive-foreground: var(
+    --destructive-foreground
+  );
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
@@ -49,9 +59,13 @@
   --color-sidebar: var(--sidebar);
   --color-sidebar-foreground: var(--sidebar-foreground);
   --color-sidebar-primary: var(--sidebar-primary);
-  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary-foreground: var(
+    --sidebar-primary-foreground
+  );
   --color-sidebar-accent: var(--sidebar-accent);
-  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent-foreground: var(
+    --sidebar-accent-foreground
+  );
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
 }
@@ -85,6 +99,17 @@ html.extension-popup body {
 html.extension-sidepanel #root {
   display: flex;
   flex-direction: column;
+  min-height: 100vh;
+  width: 100%;
+}
+
+html.extension-test-form,
+html.extension-test-form body {
+  margin: 0;
+  min-height: 100%;
+}
+
+html.extension-test-form #root {
   min-height: 100vh;
   width: 100%;
 }
@@ -197,12 +222,7 @@ html.extension-popup #root {
   line-height: 1.375;
 }
 
-.auth-session-check__hint {
-  font-size: 0.75rem;
-  color: var(--muted-foreground);
-}
-
-@container auth-layout (min-width: var(--sp-auth-cq-sm)) {
+@container auth-layout (min-width: 18rem) {
   .auth-layout {
     gap: var(--sp-auth-gap-md);
   }
@@ -221,7 +241,7 @@ html.extension-popup #root {
   }
 }
 
-@container auth-layout (min-width: var(--sp-auth-cq-md)) {
+@container auth-layout (min-width: 22rem) {
   .auth-layout {
     gap: var(--sp-auth-gap-lg);
   }
@@ -244,17 +264,13 @@ html.extension-popup #root {
     line-height: 1.5;
   }
 
-  .auth-session-check__hint {
-    font-size: 0.875rem;
-  }
-
   .auth-layout__logo {
     height: 3.5rem;
     width: 3.5rem;
   }
 }
 
-@container auth-layout (min-width: var(--sp-auth-cq-lg)) {
+@container auth-layout (min-width: 28rem) {
   .auth-layout {
     gap: var(--sp-auth-gap-xl);
   }
@@ -357,9 +373,9 @@ h2 {
   border: 1px solid var(--line);
   background: var(--chip-bg);
   color: var(--sea-ink-soft);
-  padding: 5px 10px;
-  font-size: 0.8rem;
-  font-weight: 700;
+  padding: 3px 6px;
+  font-size: 11px;
+  font-weight: 600;
 }
 
 .status-badge.connected {
@@ -425,7 +441,6 @@ dd {
   font: inherit;
   font-weight: 700;
   padding: 1rem 1.2rem;
-  
 }
 
 .panel-button:disabled {

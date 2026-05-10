@@ -20,7 +20,9 @@ declare global {
   const getAppConfig: typeof import('wxt/utils/app-config').getAppConfig
   const injectScript: typeof import('wxt/utils/inject-script').injectScript
   const storage: typeof import('wxt/utils/storage').storage
+  const useActiveTabAutofillScan: typeof import('/home/juncie/projects/SearchParty/apps/extension/hooks/use-active-tab-autofill-scan').useActiveTabAutofillScan
   const useAppConfig: typeof import('wxt/utils/app-config').useAppConfig
+  const useAutofillTabWorkflow: typeof import('/home/juncie/projects/SearchParty/apps/extension/hooks/use-autofill-tab-workflow').useAutofillTabWorkflow
   const useCallback: typeof import('react').useCallback
   const useContext: typeof import('react').useContext
   const useEffect: typeof import('react').useEffect

@@ -58,11 +58,26 @@ export const profileProjectInputSchema = z.object({
   url: z.string().trim().url().or(z.literal("")).default(""),
 });
 
+const optionalUrl = z
+  .string()
+  .trim()
+  .url()
+  .or(z.literal(""))
+  .optional()
+  .default("");
+
 export const applicantProfileInputSchema = z.object({
   name: z.string().trim().min(1, "Profile name is required"),
   targetRole: z.string().trim().min(1, "Target role is required"),
   summary: z.string().trim().optional().default(""),
   preferredTone: applicantProfileToneSchema.default("professional"),
+  firstName: z.string().trim().optional().default(""),
+  lastName: z.string().trim().optional().default(""),
+  phone: z.string().trim().optional().default(""),
+  address: z.string().trim().optional().default(""),
+  linkedinUrl: optionalUrl,
+  githubUrl: optionalUrl,
+  portfolioUrl: optionalUrl,
   workExperiences: z.array(workExperienceInputSchema).default([]),
   skills: z.array(profileSkillInputSchema).default([]),
   projects: z.array(profileProjectInputSchema).default([]),
@@ -101,6 +116,13 @@ export const applicantProfileSchema = z.object({
   targetRole: z.string(),
   summary: z.string(),
   preferredTone: applicantProfileToneSchema,
+  firstName: z.string(),
+  lastName: z.string(),
+  phone: z.string(),
+  address: z.string(),
+  linkedinUrl: z.string(),
+  githubUrl: z.string(),
+  portfolioUrl: z.string(),
   createdAt: z.string().datetime(),
   updatedAt: z.string().datetime(),
   workExperiences: z.array(workExperienceSchema),
@@ -147,3 +169,26 @@ export const updateCurrentUserInputSchema = z.object({
 export type UpdateCurrentUserInput = z.infer<
   typeof updateCurrentUserInputSchema
 >;
+
+export const customUrlSchema = z.object({
+  label: z.string().trim().min(1, "Label is required"),
+  url: z.string().trim().url("Must be a valid URL"),
+});
+
+export type CustomUrl = z.infer<typeof customUrlSchema>;
+
+export const accountSetupSchema = z.object({
+  firstName: z.string().trim().optional().default(""),
+  lastName: z.string().trim().optional().default(""),
+  phone: z.string().trim().optional().default(""),
+  addressStreet: z.string().trim().optional().default(""),
+  addressState: z.string().trim().optional().default(""),
+  addressCity: z.string().trim().optional().default(""),
+  addressZip: z.string().trim().optional().default(""),
+  addressUnit: z.string().trim().optional().default(""),
+  urls: z.array(customUrlSchema).default([]),
+});
+
+export type AccountSetup = z.infer<typeof accountSetupSchema>;
+
+export * from "./autofill";

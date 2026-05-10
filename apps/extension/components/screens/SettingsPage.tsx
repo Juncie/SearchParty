@@ -5,6 +5,7 @@ import { HeroCard } from "@/components/HeroCard";
 import { AppearanceSettingsSection } from "@/components/settings/AppearanceSettingsSection";
 import { DangerZoneSection } from "@/components/settings/DangerZoneSection";
 import { ProfileSettingsSection } from "@/components/settings/ProfileSettingsSection";
+import { SettingsFeedback } from "@/components/settings/SettingsFeedback";
 import type { ExtensionSurface } from "@/components/extension-surface";
 import {
   getExtensionPreferences,
@@ -27,11 +28,12 @@ interface SettingsPageProps {
   surface: ExtensionSurface;
 }
 
-export function SettingsPage({ surface }: SettingsPageProps) {
+export function SettingsPage({
+  surface,
+}: SettingsPageProps) {
   const navigate = useNavigate();
-  const [session, setSession] = useState<AuthSession | null>(
-    null
-  );
+  const [session, setSession] =
+    useState<AuthSession | null>(null);
   const [name, setName] = useState("");
   const [theme, setTheme] =
     useState<ExtensionThemePreference>("system");
@@ -47,7 +49,9 @@ export function SettingsPage({ surface }: SettingsPageProps) {
     | "checking"
     | "signing-out"
   >("loading");
-  const [message, setMessage] = useState<string | null>(null);
+  const [message, setMessage] = useState<string | null>(
+    null
+  );
   const [error, setError] = useState<string | null>(null);
 
   const loadSettings = useCallback(async () => {
@@ -130,32 +134,11 @@ export function SettingsPage({ surface }: SettingsPageProps) {
     []
   );
 
-  const checkConnection = useCallback(async () => {
-    setStatus("checking");
-    setError(null);
-    setMessage(null);
-
-    try {
-      const health = await checkSearchPartyHealth();
-      setMessage(
-        `Connected to ${health.app} at ${new Date(
-          health.timestamp
-        ).toLocaleTimeString()}.`
-      );
-    } catch (healthError) {
-      setError(
-        healthError instanceof Error
-          ? healthError.message
-          : "Unable to check connection."
-      );
-    } finally {
-      setStatus("idle");
-    }
-  }, []);
-
   const deleteAccount = useCallback(async () => {
     if (deleteConfirmation !== "DELETE") {
-      setError('Type "DELETE" to confirm account deletion.');
+      setError(
+        'Type "DELETE" to confirm account deletion.'
+      );
       return;
     }
 
@@ -225,8 +208,10 @@ export function SettingsPage({ surface }: SettingsPageProps) {
         }
         onNameChange={setName}
         onSaveName={() => void saveName()}
-        onCheckConnection={() => void checkConnection()}
         onSignOut={() => void handleSignOut()}
+        onEditAccount={() =>
+          void navigate({ to: "/settings/account" })
+        }
       />
 
       <AppearanceSettingsSection
@@ -248,14 +233,7 @@ export function SettingsPage({ surface }: SettingsPageProps) {
         onDeleteAccount={() => void deleteAccount()}
       />
 
-      {error || message ? (
-        <div className="@sm:col-span-2 @lg:col-span-6 space-y-2">
-          {error ? (
-            <p className="error-message text-destructive">{error}</p>
-          ) : null}
-          {message ? <p className="panel-muted">{message}</p> : null}
-        </div>
-      ) : null}
+      <SettingsFeedback error={error} message={message} />
     </div>
   );
 }

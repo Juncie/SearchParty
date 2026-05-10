@@ -20,6 +20,13 @@ export const emptyProfileDraft: ProfileDraft = {
   targetRole: "",
   summary: "",
   preferredTone: "professional",
+  firstName: "",
+  lastName: "",
+  phone: "",
+  address: "",
+  linkedinUrl: "",
+  githubUrl: "",
+  portfolioUrl: "",
   workExperiences: [],
   skills: [],
   projects: [],
@@ -79,7 +86,9 @@ export function ProfileEditor({
               }))
             }
           >
-            <option value="professional">Professional</option>
+            <option value="professional" selected>
+              Professional
+            </option>
             <option value="confident">Confident</option>
             <option value="friendly">Friendly</option>
           </select>
@@ -99,8 +108,127 @@ export function ProfileEditor({
           />
         </label>
       </section>
+      <hr className="my-2" />
+      <section className="grid gap-3">
+        <div>
+          <p className="island-kicker">
+            Autofill Overrides
+          </p>
 
-      <WorkExperienceEditor draft={draft} setDraft={setDraft} />
+          <p className="text-xs/relaxed text-muted-foreground">
+            Used when filling job forms. Leave blank to fall
+            back to your account name and email where it
+            makes sense.
+          </p>
+        </div>
+        <div className="grid gap-3 @sm:grid-cols-2">
+          <label className="grid gap-1 text-xs font-semibold">
+            First name (override)
+            <Input
+              value={draft.firstName}
+              onChange={(event) =>
+                setDraft((current) => ({
+                  ...current,
+                  firstName: event.target.value,
+                }))
+              }
+              placeholder="From account if empty"
+              autoComplete="given-name"
+            />
+          </label>
+          <label className="grid gap-1 text-xs font-semibold">
+            Last name (override)
+            <Input
+              value={draft.lastName}
+              onChange={(event) =>
+                setDraft((current) => ({
+                  ...current,
+                  lastName: event.target.value,
+                }))
+              }
+              placeholder="From account if empty"
+              autoComplete="family-name"
+            />
+          </label>
+        </div>
+        <label className="grid gap-1 text-xs font-semibold">
+          Phone
+          <Input
+            value={draft.phone}
+            onChange={(event) =>
+              setDraft((current) => ({
+                ...current,
+                phone: event.target.value,
+              }))
+            }
+            placeholder="+1 …"
+            autoComplete="tel"
+          />
+        </label>
+        <label className="grid gap-1 text-xs font-semibold">
+          Address
+          <textarea
+            className="min-h-20 rounded-[10px] border border-input bg-input/10 px-3.5 py-2 text-sm focus-visible:border-primary/50 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring/40"
+            value={draft.address}
+            onChange={(event) =>
+              setDraft((current) => ({
+                ...current,
+                address: event.target.value,
+              }))
+            }
+            placeholder="Street, city, region, postal code"
+          />
+        </label>
+        <label className="grid gap-1 text-xs font-semibold">
+          LinkedIn URL
+          <Input
+            value={draft.linkedinUrl}
+            onChange={(event) =>
+              setDraft((current) => ({
+                ...current,
+                linkedinUrl: event.target.value,
+              }))
+            }
+            placeholder="https://linkedin.com/in/…"
+            autoComplete="url"
+          />
+        </label>
+        <div className="grid gap-3 @sm:grid-cols-2">
+          <label className="grid gap-1 text-xs font-semibold">
+            GitHub URL
+            <Input
+              value={draft.githubUrl}
+              onChange={(event) =>
+                setDraft((current) => ({
+                  ...current,
+                  githubUrl: event.target.value,
+                }))
+              }
+              placeholder="https://github.com/…"
+              autoComplete="url"
+            />
+          </label>
+          <label className="grid gap-1 text-xs font-semibold">
+            Portfolio URL
+            <Input
+              value={draft.portfolioUrl}
+              onChange={(event) =>
+                setDraft((current) => ({
+                  ...current,
+                  portfolioUrl: event.target.value,
+                }))
+              }
+              placeholder="https://…"
+              autoComplete="url"
+            />
+          </label>
+        </div>
+      </section>
+
+      <WorkExperienceEditor
+        draft={draft}
+        setDraft={setDraft}
+      />
       <SkillEditor draft={draft} setDraft={setDraft} />
       <ProjectEditor draft={draft} setDraft={setDraft} />
     </form>
@@ -142,18 +270,28 @@ function WorkExperienceEditor({
             value={experience.company}
             placeholder="Company"
             onChange={(event) =>
-              updateDraftItem(setDraft, "workExperiences", index, {
-                company: event.target.value,
-              })
+              updateDraftItem(
+                setDraft,
+                "workExperiences",
+                index,
+                {
+                  company: event.target.value,
+                }
+              )
             }
           />
           <Input
             value={experience.title}
             placeholder="Title"
             onChange={(event) =>
-              updateDraftItem(setDraft, "workExperiences", index, {
-                title: event.target.value,
-              })
+              updateDraftItem(
+                setDraft,
+                "workExperiences",
+                index,
+                {
+                  title: event.target.value,
+                }
+              )
             }
           />
           <div className="grid grid-cols-2 gap-2">
@@ -187,32 +325,55 @@ function WorkExperienceEditor({
             value={experience.description}
             placeholder="Role description"
             onChange={(event) =>
-              updateDraftItem(setDraft, "workExperiences", index, {
-                description: event.target.value,
-              })
+              updateDraftItem(
+                setDraft,
+                "workExperiences",
+                index,
+                {
+                  description: event.target.value,
+                }
+              )
             }
           />
           <Input
             value={joinList(experience.technologies)}
             placeholder="Tools or tech, comma separated"
             onChange={(event) =>
-              updateDraftItem(setDraft, "workExperiences", index, {
-                technologies: splitList(event.target.value),
-              })
+              updateDraftItem(
+                setDraft,
+                "workExperiences",
+                index,
+                {
+                  technologies: splitList(
+                    event.target.value
+                  ),
+                }
+              )
             }
           />
           <Input
             value={joinList(experience.achievements)}
             placeholder="Achievements, comma separated"
             onChange={(event) =>
-              updateDraftItem(setDraft, "workExperiences", index, {
-                achievements: splitList(event.target.value),
-              })
+              updateDraftItem(
+                setDraft,
+                "workExperiences",
+                index,
+                {
+                  achievements: splitList(
+                    event.target.value
+                  ),
+                }
+              )
             }
           />
           <RemoveButton
             onClick={() =>
-              removeDraftItem(setDraft, "workExperiences", index)
+              removeDraftItem(
+                setDraft,
+                "workExperiences",
+                index
+              )
             }
           />
         </div>
@@ -221,7 +382,10 @@ function WorkExperienceEditor({
   );
 }
 
-function SkillEditor({ draft, setDraft }: ProfileEditorProps) {
+function SkillEditor({
+  draft,
+  setDraft,
+}: ProfileEditorProps) {
   return (
     <EditorSection
       title="Skills"
@@ -270,7 +434,9 @@ function SkillEditor({ draft, setDraft }: ProfileEditorProps) {
             placeholder="Years"
             onChange={(event) =>
               updateDraftItem(setDraft, "skills", index, {
-                yearsOfExperience: Number(event.target.value),
+                yearsOfExperience: Number(
+                  event.target.value
+                ),
               })
             }
           />
@@ -285,7 +451,10 @@ function SkillEditor({ draft, setDraft }: ProfileEditorProps) {
   );
 }
 
-function ProjectEditor({ draft, setDraft }: ProfileEditorProps) {
+function ProjectEditor({
+  draft,
+  setDraft,
+}: ProfileEditorProps) {
   return (
     <EditorSection
       title="Projects"
@@ -396,7 +565,11 @@ function EditorSection({
   );
 }
 
-function RemoveButton({ onClick }: { onClick: () => void }) {
+function RemoveButton({
+  onClick,
+}: {
+  onClick: () => void;
+}) {
   return (
     <Button
       variant="ghost"
@@ -417,6 +590,13 @@ export function profileToDraft(
     targetRole: profile.targetRole,
     summary: profile.summary,
     preferredTone: profile.preferredTone,
+    firstName: profile.firstName,
+    lastName: profile.lastName,
+    phone: profile.phone,
+    address: profile.address,
+    linkedinUrl: profile.linkedinUrl,
+    githubUrl: profile.githubUrl,
+    portfolioUrl: profile.portfolioUrl,
     workExperiences: profile.workExperiences.map(
       ({
         company,

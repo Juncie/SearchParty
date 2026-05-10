@@ -7,24 +7,28 @@ import {
 } from "react";
 
 import type { ApplicantProfile } from "@searchparty/shared";
+import {
+  buildAutofillPayloadValues,
+  valueForAutofillKind,
+} from "@searchparty/shared";
+import { DashboardAutofillSection } from "@/components/dashboard/DashboardAutofillSection";
+import { DashboardProfilesSection } from "@/components/dashboard/DashboardProfilesSection";
 import type { ExtensionSurface } from "@/components/extension-surface";
+import {
+  quickApplyFields,
+  scanSummaryLine,
+} from "@/components/autofill/autofill-display";
 import { HeroCard } from "@/components/HeroCard";
-import { Button } from "@/components/ui/button";
+import { useActiveTabAutofillScan } from "@/hooks/use-active-tab-autofill-scan";
+import { applyAutofillToActiveTab } from "@/lib/autofill-active-tab";
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import {
+  deleteApplicantProfile,
   getAuthSession,
   listApplicantProfiles,
   setActiveApplicantProfile,
   type AuthSession,
 } from "@/lib/searchparty-api";
-import { cn } from "@/lib/utils";
-import { Plus, Settings } from "lucide-react";
+import { Settings } from "lucide-react";
 
 interface DashboardPageProps {
   surface: ExtensionSurface;
@@ -43,9 +47,24 @@ export function DashboardPage({
     string | null
   >(null);
   const [status, setStatus] = useState<"loading" | "idle">(
-    "loading"
+    "loading",
   );
   const [error, setError] = useState<string | null>(null);
+  const [quickApplyBusy, setQuickApplyBusy] =
+    useState(false);
+  const [quickNotice, setQuickNotice] = useState<
+    string | null
+  >(null);
+  const [quickError, setQuickError] = useState<string | null>(
+    null,
+  );
+
+  const {
+    fields: scanFields,
+    scanError,
+    scanBusy,
+    refreshScan,
+  } = useActiveTabAutofillScan();
 
   const displayName = useMemo(() => {
     if (session?.user.name?.trim())
@@ -54,6 +73,13 @@ export function DashboardPage({
       return session.user.email.split("@")[0];
     return "there";
   }, [session]);
+
+  const defaultProfile = useMemo(
+    () =>
+      profiles.find((p) => p.id === activeProfileId) ??
+      null,
+    [profiles, activeProfileId],
+  );
 
   const loadDashboard = useCallback(async () => {
     setStatus("loading");
@@ -85,23 +111,155 @@ export function DashboardPage({
     void loadDashboard();
   }, [loadDashboard]);
 
-  const handleSetActive = useCallback(
-    async (profileId: string) => {
+  const handleQuickApply = useCallback(async () => {
+    setQuickNotice(null);
+    setQuickError(null);
+    if (!session?.user || !defaultProfile) {
+      setQuickError("Choose a default profile first.");
+      return;
+    }
+    setQuickApplyBusy(true);
+    try {
+      const latestFields = await refreshScan("cached");
+      const payload = buildAutofillPayloadValues({
+        user: {
+          name: session.user.name,
+          email: session.user.email,
+        },
+        profile: defaultProfile,
+      });
+      const fills = quickApplyFields(latestFields)
+        .map((f) => ({
+          spId: f.spId,
+          value: valueForAutofillKind(payload, f.kind),
+        }))
+        .filter((f) => f.value.trim().length > 0);
+      if (fills.length === 0) {
+        setQuickError(
+          "No high-confidence matches with values from your default profile. Try Preview matches.",
+        );
+        return;
+      }
+      const res = await applyAutofillToActiveTab(fills);
+      if (!res.ok) {
+        setQuickError(res.error);
+        return;
+      }
+      setQuickNotice(
+        `Filled ${fills.length} field${fills.length === 1 ? "" : "s"} on this page.`,
+      );
+    } finally {
+      setQuickApplyBusy(false);
+    }
+  }, [defaultProfile, refreshScan, session]);
+
+  const handleApplyProfile = useCallback(
+    async (profile: ApplicantProfile) => {
+      setQuickNotice(null);
+      setQuickError(null);
+      if (!session?.user) {
+        setQuickError("Sign in to apply autofill.");
+        return;
+      }
+      setQuickApplyBusy(true);
       try {
-        const response =
+        const latestFields = await refreshScan("cached");
+        const payload = buildAutofillPayloadValues({
+          user: {
+            name: session.user.name,
+            email: session.user.email,
+          },
+          profile,
+        });
+        const fills = quickApplyFields(latestFields)
+          .map((f) => ({
+            spId: f.spId,
+            value: valueForAutofillKind(payload, f.kind),
+          }))
+          .filter((f) => f.value.trim().length > 0);
+        if (fills.length === 0) {
+          setQuickError(
+            "Nothing to apply for quick matches on this page with that profile.",
+          );
+          return;
+        }
+        const res = await applyAutofillToActiveTab(fills);
+        if (!res.ok) {
+          setQuickError(res.error);
+          return;
+        }
+        setQuickNotice(
+          `Filled ${fills.length} field${fills.length === 1 ? "" : "s"} with ${profile.name}.`,
+        );
+      } finally {
+        setQuickApplyBusy(false);
+      }
+    },
+    [refreshScan, session],
+  );
+
+  const handleSetDefaultProfile = useCallback(
+    async (profileId: string) => {
+      setQuickError(null);
+      try {
+        const res =
           await setActiveApplicantProfile(profileId);
-        setProfiles(response.profiles);
-        setActiveProfileId(response.activeProfileId);
-      } catch (activeError) {
-        setError(
-          activeError instanceof Error
-            ? activeError.message
-            : "Unable to select active profile."
+        setActiveProfileId(res.activeProfileId);
+        setQuickNotice("Default profile updated.");
+      } catch (e) {
+        setQuickError(
+          e instanceof Error
+            ? e.message
+            : "Could not update default profile.",
         );
       }
     },
-    []
+    [],
   );
+
+  const handleDeleteProfile = useCallback(
+    async (profileId: string) => {
+      const confirmed = window.confirm(
+        "Delete this profile? This cannot be undone."
+      );
+      if (!confirmed) return;
+      setQuickError(null);
+      try {
+        await deleteApplicantProfile(profileId);
+        await loadDashboard();
+        setQuickNotice("Profile deleted.");
+      } catch (e) {
+        setQuickError(
+          e instanceof Error
+            ? e.message
+            : "Could not delete profile.",
+        );
+      }
+    },
+    [loadDashboard],
+  );
+
+  const defaultPayload =
+    session?.user && defaultProfile
+      && buildAutofillPayloadValues({
+          user: {
+            name: session.user.name,
+            email: session.user.email,
+          },
+          profile: defaultProfile,
+        })
+     
+
+  const hasQuickTargets =
+    Boolean(defaultPayload) &&
+    quickApplyFields(scanFields).some(
+      (f) =>
+        valueForAutofillKind(defaultPayload!, f.kind).trim()
+          .length > 0,
+    );
+
+  const blockError = scanError ?? quickError;
+  const blockNotice = quickNotice;
 
   return (
     <main className="grid gap-3">
@@ -118,132 +276,42 @@ export function DashboardPage({
         actionIcon={Settings}
       />
 
-      <section className="status-card">
-        <div className="flex items-start justify-between gap-3">
-          <div>
-            <p className="island-kicker">Profiles</p>
-            <h2>Your profiles</h2>
-            <p className="panel-muted">
-              {profiles.length === 0
-                ? "Create your first reusable profile to speed up applications."
-                : `${profiles.length} saved profile${profiles.length === 1 ? "" : "s"}`}
-            </p>
-          </div>
-          {status === "loading" ? (
-            <span className="status-badge">Loading</span>
-          ) : null}
-        </div>
+      <DashboardAutofillSection
+        scanSummary={scanSummaryLine(scanFields)}
+        scanBusy={scanBusy}
+        quickApplyBusy={quickApplyBusy}
+        fieldsDetected={scanFields.length > 0}
+        hasQuickTargets={hasQuickTargets}
+        hasDefaultProfile={Boolean(defaultProfile)}
+        notice={blockNotice}
+        error={blockError}
+        onQuickApply={() => void handleQuickApply()}
+        onPreviewMatches={() =>
+          void navigate({ to: "/autofill" })
+        }
+      />
 
-        {error ? (
-          <p className="error-message text-destructive">
-            {error}
-          </p>
-        ) : null}
-
-        <div className="grid gap-3 @sm:grid-cols-2">
-          {profiles.map((profile) => (
-            <ProfileCard
-              key={profile.id}
-              profile={profile}
-              isActive={profile.id === activeProfileId}
-              onEdit={() =>
-                void navigate({
-                  to: "/profiles/$profileId",
-                  params: { profileId: profile.id },
-                })
-              }
-              onActivate={() =>
-                void handleSetActive(profile.id)
-              }
-            />
-          ))}
-
-          <button
-            type="button"
-            className="min-h-36 space-y-2 rounded-lg border border-dashed border-border bg-card/40 p-4 text-left transition hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-            onClick={() =>
-              void navigate({ to: "/profiles/new" })
-            }
-          >
-            <span className="inline-flex items-center justify-center rounded-lg bg-primary/10 p-2">
-              <Plus className="size-6 text-primary" />
-            </span>
-            <span className="block text-sm font-semibold">
-              Create a new profile
-            </span>
-            <span className="mt-2 block text-xs/relaxed text-muted-foreground">
-              Start from scratch or pick a quick-start role
-              on the next screen.
-            </span>
-          </button>
-        </div>
-      </section>
+      <DashboardProfilesSection
+        profiles={profiles}
+        session={session}
+        activeProfileId={activeProfileId}
+        scanFields={scanFields}
+        isLoading={status === "loading"}
+        error={error}
+        applyBusy={quickApplyBusy}
+        onEditProfile={(profileId) =>
+          void navigate({
+            to: "/profiles/$profileId",
+            params: { profileId },
+          })
+        }
+        onCreateProfile={() =>
+          void navigate({ to: "/profiles/new" })
+        }
+        onApplyProfile={handleApplyProfile}
+        onSetDefaultProfile={handleSetDefaultProfile}
+        onDeleteProfile={handleDeleteProfile}
+      />
     </main>
-  );
-}
-
-function ProfileCard({
-  profile,
-  isActive,
-  onEdit,
-  onActivate,
-}: {
-  profile: ApplicantProfile;
-  isActive: boolean;
-  onEdit: () => void;
-  onActivate: () => void;
-}) {
-  return (
-    <Card
-      className={cn(
-        "bg-card/80",
-        isActive && "ring-2 ring-primary/70 shadow-xl"
-      )}
-    >
-      <CardHeader>
-        <div className="flex items-start justify-between gap-2">
-          <div>
-            <CardTitle>{profile.name}</CardTitle>
-            <CardDescription>
-              {profile.targetRole}
-            </CardDescription>
-          </div>
-          {isActive ? (
-            <span className="status-badge connected">
-              Active
-            </span>
-          ) : null}
-        </div>
-      </CardHeader>
-      <CardContent className="grid gap-3">
-        <p className="line-clamp-3 text-xs/relaxed text-muted-foreground">
-          {profile.summary || "No summary added yet."}
-        </p>
-        <dl className="status-details">
-          <div>
-            <dt>Skills</dt>
-            <dd>{profile.skills.length}</dd>
-          </div>
-          <div>
-            <dt>Experience</dt>
-            <dd>{profile.workExperiences.length}</dd>
-          </div>
-        </dl>
-        <div className="panel-actions">
-          <Button size="sm" type="button" onClick={onEdit}>
-            Edit
-          </Button>
-          <Button
-            size="sm"
-            variant="outline"
-            type="button"
-            onClick={onActivate}
-            disabled={isActive}
-          >
-            {isActive ? "Selected" : "Set active"}
-          </Button>
-        </div>
-      </CardContent>
-    </Card>
   );
 }

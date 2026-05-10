@@ -18,6 +18,8 @@
   ],
   "host_permissions": [
     "http://localhost:3001/*",
+    "http://*/*",
+    "https://*/*",
     "http://localhost/*"
   ],
   "side_panel": {

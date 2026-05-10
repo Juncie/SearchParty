@@ -25,19 +25,23 @@ export function HeroCard({
         <div>
           <p className="island-kicker">{title}</p>
           <h1 className="display-title">{greeting}</h1>
-          {description ? <p className="lede">{description}</p> : null}
+          {description ? (
+            <p className="lede">{description}</p>
+          ) : null}
         </div>
-        {action && actionTitle ? (
+        {action && actionTitle && (
           <Button
             variant="outline"
             size="sm"
             type="button"
             onClick={action}
           >
-            {ActionIcon ? <ActionIcon className="size-4" /> : null}
+            {ActionIcon && (
+              <ActionIcon className="size-4" />
+            )}
             {actionTitle}
           </Button>
-        ) : null}
+        )}
       </div>
     </section>
   );

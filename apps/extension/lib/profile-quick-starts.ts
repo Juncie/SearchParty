@@ -1,5 +1,24 @@
 import type { ApplicantProfileInput } from "@searchparty/shared";
 
+const profileAutofillDefaults: Pick<
+  ApplicantProfileInput,
+  | "firstName"
+  | "lastName"
+  | "phone"
+  | "address"
+  | "linkedinUrl"
+  | "githubUrl"
+  | "portfolioUrl"
+> = {
+  firstName: "",
+  lastName: "",
+  phone: "",
+  address: "",
+  linkedinUrl: "",
+  githubUrl: "",
+  portfolioUrl: "",
+};
+
 export interface ProfileQuickStart {
   id: string;
   label: string;
@@ -14,6 +33,7 @@ export const profileQuickStarts: ProfileQuickStart[] = [
     description:
       "Balanced software profile for frontend, backend, APIs, and databases.",
     profile: {
+      ...profileAutofillDefaults,
       name: "Full Stack Engineer",
       targetRole: "Full Stack Engineer",
       summary:
@@ -51,6 +71,7 @@ export const profileQuickStarts: ProfileQuickStart[] = [
     description:
       "Creative profile for visual design, brand systems, and campaign assets.",
     profile: {
+      ...profileAutofillDefaults,
       name: "Graphic Designer",
       targetRole: "Graphic Designer",
       summary:
@@ -83,6 +104,7 @@ export const profileQuickStarts: ProfileQuickStart[] = [
     description:
       "Support profile for customer care, issue resolution, and communication.",
     profile: {
+      ...profileAutofillDefaults,
       name: "Customer Service Representative",
       targetRole: "Customer Service Representative",
       summary:
@@ -115,6 +137,7 @@ export const profileQuickStarts: ProfileQuickStart[] = [
     description:
       "Revenue profile for pipeline management, discovery, and closing.",
     profile: {
+      ...profileAutofillDefaults,
       name: "Sales",
       targetRole: "Sales Representative",
       summary:
@@ -147,6 +170,7 @@ export const profileQuickStarts: ProfileQuickStart[] = [
     description:
       "Organized profile for scheduling, process improvement, and team support.",
     profile: {
+      ...profileAutofillDefaults,
       name: "Operations Coordinator",
       targetRole: "Operations Coordinator",
       summary:

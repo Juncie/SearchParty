@@ -22,4 +22,6 @@ declare module '#imports' {
   export { HeroCard } from '../components/HeroCard';
   export { SearchPartyPanel } from '../components/SearchPartyPanel';
   export { ExtensionSurface } from '../components/extension-surface';
+  export { useActiveTabAutofillScan } from '../hooks/use-active-tab-autofill-scan';
+  export { useAutofillTabWorkflow } from '../hooks/use-autofill-tab-workflow';
 }

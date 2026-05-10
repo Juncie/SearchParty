@@ -1,24 +1,26 @@
 import { useNavigate } from "@tanstack/react-router";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
 
 import type { ApplicantProfile } from "@searchparty/shared";
+import { AutofillWorkspace } from "@/components/autofill/AutofillWorkspace";
 import type { ExtensionSurface } from "@/components/extension-surface";
 import { HeroCard } from "@/components/HeroCard";
+import { useAutofillTabWorkflow } from "@/hooks/use-autofill-tab-workflow";
 import {
   emptyProfileDraft,
-  ProfileEditor,
   profileToDraft,
   type ProfileDraft,
 } from "@/components/profiles/ProfileEditor";
-import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { profileQuickStarts } from "@/lib/profile-quick-starts";
+import { ProfileEditDirtySaveBar } from "@/components/profiles/ProfileEditDirtySaveBar";
+import { ProfileEditFeedback } from "@/components/profiles/ProfileEditFeedback";
+import { ProfileEditManageActions } from "@/components/profiles/ProfileEditManageActions";
+import { ProfileEditorSectionCard } from "@/components/profiles/ProfileEditorSectionCard";
+import { ProfileQuickStartsSection } from "@/components/profiles/ProfileQuickStartsSection";
 import {
   createApplicantProfile,
   deleteApplicantProfile,
@@ -26,7 +28,9 @@ import {
   listApplicantProfiles,
   setActiveApplicantProfile,
   updateApplicantProfile,
+  type AuthSession,
 } from "@/lib/searchparty-api";
+import { ArrowLeft } from "lucide-react";
 
 interface ProfileEditPageProps {
   surface: ExtensionSurface;
@@ -40,21 +44,43 @@ export function ProfileEditPage({
   const navigate = useNavigate();
   const isEditing = Boolean(profileId);
   const isSidePanel = surface === "sidepanel";
-  const [profiles, setProfiles] = useState<ApplicantProfile[]>([]);
+  const [profiles, setProfiles] = useState<
+    ApplicantProfile[]
+  >([]);
   const [activeProfileId, setActiveProfileId] = useState<
     string | null
   >(null);
-  const [draft, setDraft] =
+  const [draft, setDraft] = useState<ProfileDraft>(
+    emptyProfileDraft
+  );
+  const [initialDraft, setInitialDraft] =
     useState<ProfileDraft>(emptyProfileDraft);
   const [status, setStatus] = useState<
     "loading" | "idle" | "saving" | "deleting"
   >("loading");
-  const [message, setMessage] = useState<string | null>(null);
+  const [message, setMessage] = useState<string | null>(
+    null
+  );
   const [error, setError] = useState<string | null>(null);
+  const [session, setSession] =
+    useState<AuthSession | null>(null);
 
   const selectedProfile = useMemo(
-    () => profiles.find((profile) => profile.id === profileId) ?? null,
+    () =>
+      profiles.find(
+        (profile) => profile.id === profileId
+      ) ?? null,
     [profileId, profiles]
+  );
+
+  const autofillWorkflow = useAutofillTabWorkflow(
+    selectedProfile,
+    status === "loading" ? null : session,
+    {
+      autoScan:
+        Boolean(isEditing && selectedProfile) &&
+        status === "idle",
+    }
   );
 
   const loadProfiles = useCallback(async () => {
@@ -62,16 +88,18 @@ export function ProfileEditPage({
     setError(null);
 
     try {
-      const session = await getAuthSession();
-      if (!session?.session) {
+      const authSession = await getAuthSession();
+      if (!authSession?.session) {
         void navigate({ to: "/login" });
         return;
       }
 
       const response = await listApplicantProfiles();
+      setSession(authSession);
       const nextProfile =
-        response.profiles.find((profile) => profile.id === profileId) ??
-        null;
+        response.profiles.find(
+          (profile) => profile.id === profileId
+        ) ?? null;
 
       setProfiles(response.profiles);
       setActiveProfileId(response.activeProfileId);
@@ -79,12 +107,15 @@ export function ProfileEditPage({
       if (profileId && !nextProfile) {
         setError("Profile not found.");
         setDraft(emptyProfileDraft);
+        setInitialDraft(emptyProfileDraft);
         return;
       }
 
-      setDraft(
-        nextProfile ? profileToDraft(nextProfile) : emptyProfileDraft
-      );
+      const newDraft = nextProfile
+        ? profileToDraft(nextProfile)
+        : emptyProfileDraft;
+      setDraft(newDraft);
+      setInitialDraft(newDraft);
     } catch (loadError) {
       setError(
         loadError instanceof Error
@@ -117,7 +148,9 @@ export function ProfileEditPage({
         });
       }
 
-      setDraft(profileToDraft(savedProfile));
+      const updatedDraft = profileToDraft(savedProfile);
+      setDraft(updatedDraft);
+      setInitialDraft(updatedDraft);
       setMessage(
         profileId ? "Profile updated." : "Profile created."
       );
@@ -138,9 +171,11 @@ export function ProfileEditPage({
     setError(null);
 
     try {
-      const response = await setActiveApplicantProfile(profileId);
+      const response =
+        await setActiveApplicantProfile(profileId);
+      setProfiles(response.profiles);
       setActiveProfileId(response.activeProfileId);
-      setMessage("Active profile selected.");
+      setMessage("Default profile updated.");
     } catch (activeError) {
       setError(
         activeError instanceof Error
@@ -176,19 +211,46 @@ export function ProfileEditPage({
     }
   }, [navigate, profileId]);
 
-  const applyTemplate = useCallback((template: ProfileDraft) => {
-    setDraft(template);
-    setMessage(`Loaded ${template.name}. Review and save it.`);
-    setError(null);
-  }, []);
+  const applyTemplate = useCallback(
+    (template: ProfileDraft) => {
+      setDraft(template);
+      setMessage(
+        `Loaded ${template.name}. Review and save it.`
+      );
+      setError(null);
+    },
+    []
+  );
+
+  const isDirty = useMemo(() => {
+    return (
+      JSON.stringify(draft) !== JSON.stringify(initialDraft)
+    );
+  }, [draft, initialDraft]);
+
+  const statusIdle = status === "idle";
+
+  const autofillBusy =
+    status === "loading" || autofillWorkflow.busy;
+
+  const autofillWorkspaceStatus =
+    status === "loading"
+      ? "loading"
+      : autofillWorkflow.status === "scanning"
+        ? "scanning"
+        : autofillWorkflow.status === "applying"
+          ? "applying"
+          : "idle";
 
   return (
-    <>
+    <main className="grid gap-6 pb-24">
       <HeroCard
-        title={isEditing ? "Edit profile" : "Create profile"}
+        title={
+          isEditing ? "Edit profile" : "Create profile"
+        }
         greeting={
           isEditing
-            ? selectedProfile?.name ?? "Profile details"
+            ? (selectedProfile?.name ?? "Profile details")
             : "Build a reusable profile"
         }
         description={
@@ -197,90 +259,67 @@ export function ProfileEditPage({
             : "Add the essentials now, then refine details as your search evolves."
         }
         action={() => void navigate({ to: "/dashboard" })}
+        actionIcon={ArrowLeft}
         actionTitle="Dashboard"
       />
 
       {!isEditing ? (
-        <section className="status-card">
-          <div>
-            <p className="island-kicker">Quick starts</p>
-            <h2>Choose a starting point</h2>
-          </div>
-          <div className="grid gap-2 sm:grid-cols-2">
-            {profileQuickStarts.map((quickStart) => (
-              <button
-                key={quickStart.id}
-                type="button"
-                className="rounded-xl border border-border bg-card/70 p-3 text-left transition hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-                onClick={() =>
-                  applyTemplate(quickStart.profile)
-                }
-              >
-                <span className="font-semibold">
-                  {quickStart.label}
-                </span>
-                <span className="mt-1 block text-xs text-muted-foreground">
-                  {quickStart.description}
-                </span>
-              </button>
-            ))}
-          </div>
-        </section>
+        <ProfileQuickStartsSection
+          onSelectTemplate={applyTemplate}
+        />
       ) : null}
 
-      <Card className="bg-card/80">
-        <CardHeader>
-          <CardTitle>
-            {isEditing ? "Profile fields" : "New profile"}
-          </CardTitle>
-          <CardDescription>
-            These details power future autofill, generated answers,
-            and tailored documents.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <ProfileEditor draft={draft} setDraft={setDraft} />
-        </CardContent>
-      </Card>
-
-      {error ? (
-        <p className="error-message text-destructive">{error}</p>
+      {isEditing && selectedProfile ? (
+        <AutofillWorkspace
+          prominentApply
+          busy={autofillBusy}
+          session={session}
+          status={autofillWorkspaceStatus}
+          activeProfile={selectedProfile}
+          fields={autofillWorkflow.fields}
+          payload={autofillWorkflow.payload}
+          selected={autofillWorkflow.selected}
+          onToggleField={autofillWorkflow.onToggleField}
+          error={autofillWorkflow.error}
+          notice={autofillWorkflow.notice}
+          onScan={() =>
+            void autofillWorkflow.runScan("refresh")
+          }
+          onApply={() => void autofillWorkflow.apply()}
+          onSetDefaultProfile={
+            selectedProfile.id !== activeProfileId
+              ? () => void activateProfile()
+              : undefined
+          }
+          setDefaultProfileDisabled={!statusIdle}
+        />
       ) : null}
-      {message ? <p className="panel-muted">{message}</p> : null}
 
-      <section className="panel-actions">
-        <Button
-          type="button"
-          onClick={() => void saveProfile()}
-          disabled={status !== "idle"}
-        >
-          {status === "saving" ? "Saving..." : "Save profile"}
-        </Button>
-        {profileId ? (
-          <Button
-            variant="outline"
-            type="button"
-            onClick={() => void activateProfile()}
-            disabled={
-              status !== "idle" || activeProfileId === profileId
-            }
-          >
-            {activeProfileId === profileId
-              ? "Active profile"
-              : "Make active"}
-          </Button>
-        ) : null}
-        {profileId ? (
-          <Button
-            variant="destructive"
-            type="button"
-            onClick={() => void deleteProfile()}
-            disabled={status !== "idle"}
-          >
-            {status === "deleting" ? "Deleting..." : "Delete"}
-          </Button>
-        ) : null}
-      </section>
-    </>
+      <ProfileEditorSectionCard
+        isEditing={isEditing}
+        draft={draft}
+        setDraft={setDraft}
+      />
+
+      <ProfileEditFeedback
+        error={error}
+        message={message}
+      />
+
+      <ProfileEditManageActions
+        profileId={profileId}
+        activeProfileId={activeProfileId}
+        statusIdle={statusIdle}
+        onActivate={activateProfile}
+        onDelete={deleteProfile}
+        deleting={status === "deleting"}
+      />
+
+      <ProfileEditDirtySaveBar
+        visible={isDirty}
+        isSaving={status === "saving"}
+        onSave={saveProfile}
+      />
+    </main>
   );
 }

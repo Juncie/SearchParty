@@ -50,9 +50,12 @@ SearchParty/
   tsconfig.json          Shared strict TypeScript baseline
 ```
 
-`packages/shared` exports app metadata, the health-check contract, and the
-shared applicant profile schemas/types used by the web API and extension. Job
-posting, application, document, autofill, and AI domain models are still planned.
+`packages/shared` exports app metadata, the health-check contract, shared
+applicant profile schemas/types, and **Phase 3 autofill helpers** (`autofill.ts`:
+field-kind matching from DOM signals, confidence tiers, payload building from the
+signed-in user + active profile, content-script message type constants, and
+`ScannedAutofillFieldPayload`). Job posting, application, document, and AI domain
+models beyond autofill are still planned or partial.
 
 ## System Overview
 
@@ -72,7 +75,8 @@ User
        -> Better Auth client calls to apps/web (`/api/auth/*`)
        -> Applicant profile API calls to apps/web (`/api/profiles/*`)
        -> Health-check client for apps/web
-       -> Content script
+       -> Content scripts (`content.ts` for local web; `autofill.content.ts` for
+          http(s) pages: scan + apply via `tabs.sendMessage`)
        -> Background script
 ```
 
@@ -297,7 +301,9 @@ The current Drizzle schema defines PostgreSQL tables:
   experience
 - **`profile_projects`**: profile-owned portfolio projects with descriptions,
   technology stacks, and links
-- **`user_profile_settings`**: per-user active applicant profile pointer
+- **`user_profile_settings`**: per-user active applicant profile pointer plus
+  global account setup fields (name, phone, structured mailing address: street,
+  state, city, zip, unit, and custom URLs) consumed by `/api/account`
 
 Database CLI scripts are defined on `@searchparty/db` (`db:generate`, `db:migrate`,
 `db:push`, and so on). `apps/web` forwards the same script names via
@@ -367,28 +373,52 @@ Entrypoints:
 
 - `apps/extension/entrypoints/background.ts` applies the saved toolbar-click
   behavior (`popup` or `sidepanel`) when the browser supports the Side Panel API.
-- `apps/extension/entrypoints/content.ts` currently matches the local web app
-  only and logs a foundation message.
+- `apps/extension/entrypoints/content.ts` matches the local web app only
+  (foundation log).
+- `apps/extension/entrypoints/autofill.content.ts` matches `http://*/*` and
+  `https://*/*`, scores inputs with `@searchparty/shared` autofill matching, tags
+  controls with `data-searchparty-autofill-id`, runs an automatic scan after
+  `DOMContentLoaded` (cached for reuse), and responds to panel messages:
+  `SEARCHPARTY_AUTOFILL_GET_SCAN` (reuse cache or scan once),
+  `SEARCHPARTY_AUTOFILL_SCAN` (force refresh), and `SEARCHPARTY_AUTOFILL_APPLY`.
 - `apps/extension/entrypoints/popup/main.tsx` mounts `SearchPartyPanel` with the
   popup surface.
 - `apps/extension/entrypoints/sidepanel/main.tsx` mounts `SearchPartyPanel` with
   the side panel surface.
+- `apps/extension/entrypoints/autofill-test-form/` is an unlisted HTML page
+  (`autofill-test-form.html` in the build output) with a generic job application
+  form for manual autofill testing. Because Chrome does not inject autofill
+  content scripts on `chrome-extension://` pages, run
+  `pnpm --filter search-party-extension serve:test-form` and open
+  `http://localhost:7242/autofill-test-form.html` with the extension loaded.
 - `apps/extension/components/SearchPartyPanel.tsx` owns the memory-backed
   TanStack Router for popup and side panel surfaces. It defines `/login`,
-  `/dashboard`, `/profiles/new`, `/profiles/$profileId`, and `/settings`.
+  `/dashboard`, `/autofill`, `/profiles/new`, `/profiles/$profileId`, and
+  `/settings`.
+- `apps/extension/components/navigation/BottomNav.tsx` renders the extension’s
+  primary bottom tab bar (`/dashboard`, `/autofill`, `/settings`) on every
+  route, fixed to the bottom of the panel viewport and full width, with an
+  active-tab highlight when the current path matches a tab; `SearchPartyPanel`
+  pads the scroll outlet so content clears the bar.
 - `apps/extension/components/AppRouter.tsx` remains as a compatibility wrapper
   for generated WXT auto-import metadata and delegates to `SearchPartyPanel`.
 - `apps/extension/components/screens/LoginPage.tsx` renders the logo-backed
   login screen.
 - `apps/extension/components/screens/DashboardPage.tsx` renders the personalized
-  authenticated dashboard with profile cards and quick access to profile
-  creation, editing, active-profile selection, settings, and sign out.
+  authenticated dashboard with Quick Apply (default profile, high-confidence
+  fields only), minimal profile rows (Apply, overflow menu for default/edit/delete),
+  profile creation, settings, and sign out.
 - `apps/extension/components/screens/ProfileEditPage.tsx` renders dedicated
-  create/edit profile routes using `ProfileEditor`.
+  create/edit profile routes using `ProfileEditor`, plus an autofill panel (scan,
+  tier preview, prominent apply) when editing an existing profile.
 - `apps/extension/components/screens/SettingsPage.tsx` renders theme, layout,
   display-name, connection, and account-deletion settings.
 - `apps/extension/components/profiles/ProfileEditor.tsx` provides the reusable
-  profile form for work history, skills, and projects.
+  profile form for application autofill contact fields, work history, skills,
+  and projects.
+- `apps/extension/components/screens/AutofillPage.tsx` loads a cached scan on
+  open, supports manual refresh, previews mapped values and confidence tiers, and
+  applies selected fills.
 - `apps/extension/components/ui/*` stores shadcn/ui primitives generated for the
   extension app (starting with `button.tsx`).
 - `apps/extension/lib/profile-quick-starts.ts` defines five general
@@ -409,9 +439,10 @@ Entrypoints:
   extension stylesheets.
 
 `apps/extension/wxt.config.ts` enables the React module, declares MV3 side panel
-metadata, requests `sidePanel` and `storage`, and grants host access only to the
-local web app URL used during Phase 1 development. Generated WXT files live
-under `apps/extension/.wxt/` and should not be edited manually.
+metadata, requests `sidePanel`, `storage`, and `tabs`, and grants host access to
+the local web app URL plus `http://*/*` and `https://*/*` so the autofill content
+script can run on job application pages. Generated WXT files live under
+`apps/extension/.wxt/` and should not be edited manually.
 
 `apps/extension/entrypoints/popup/style.css` now imports Tailwind and
 `shadcn/tailwind.css` before the shared UI theme so utility classes and shadcn
@@ -471,17 +502,23 @@ Dependencies present but not yet wired into visible product flows:
 
 ## Shared Package
 
-`packages/shared` contains foundation-only contracts used across apps.
+`packages/shared` contains cross-app contracts used by the web app and extension.
 
-Current exports:
+Current exports include:
 
 - `SEARCHPARTY_APP`: shared app metadata and the local web development URL.
-- `healthResponseSchema`: Zod schema for the web health response.
-- `HealthResponse`: inferred TypeScript type for the health response.
-- `createHealthResponse()`: helper used by the Hono health endpoint.
+- Health-check schema/types and `createHealthResponse()`.
+- Applicant profile Zod schemas and TypeScript types (including optional contact
+  fields used for autofill: first/last name overrides, phone, address, LinkedIn,
+  GitHub, portfolio URLs).
+- **Autofill**: `matchDomFieldToAutofill`, `confidenceScoreToTier`,
+  `buildAutofillPayloadValues`, `valueForAutofillKind`, scan/apply message type
+  constants, and `ScannedAutofillFieldPayload`.
+- Vitest unit tests for autofill matching and payload behavior (`pnpm --filter
+  @searchparty/shared test`).
 
-The package intentionally does not define applicant profiles, job postings,
-applications, documents, autofill models, or AI contracts yet.
+Job postings, applications, documents, and AI generation contracts are still
+planned or minimal beyond autofill.
 
 ## Shared UI Theme
 
@@ -586,8 +623,9 @@ Current implemented security mechanisms:
 - Better Auth handles auth routes and session cookies.
 - `tanstackStartCookies` integrates auth cookies into TanStack Start.
 - Client-exposed environment variables must use the `VITE_` prefix.
-- The extension currently grants host access only to the local web app URL
-  (`http://localhost:3001/*` in the shared development config).
+- The extension grants host access to the local web app URL and to `http://*/*`
+  and `https://*/*` for the autofill content script (review before production
+  store submission).
 
 Security gaps to address before production:
 
@@ -604,8 +642,9 @@ Security gaps to address before production:
 - Shared domain contracts now exist for applicant profiles; job, document, and
   application contracts are still planned.
 - The web UI is still a foundation landing route.
-- The browser extension can manage applicant profiles, but autofill and
-  application workflows are not wired yet.
+- The browser extension can manage applicant profiles and run a Phase 3
+  autofill MVP (scan, preview by confidence tier, apply selected fields).
+  Deeper application workflows (job extraction, tracker, AI) are not wired yet.
 - tRPC stores todos in memory while Drizzle defines a PostgreSQL `todos` table.
 - AI dependencies are installed, but AI generation workflows are not
   implemented.
@@ -622,12 +661,14 @@ Ready now:
 - Shared package provides cross-app contracts for health checks and applicant
   profiles.
 
-Do next before/while UI work starts:
+Do next before/while UI work continues:
 
 - Keep local web URL/port changes synchronized across web, extension, and shared.
-- Keep profile data models synchronized across `packages/shared`, `packages/db`,
-  web routes, and extension UI as Phase 3 autofill starts.
-- Build autofill UI primitives on top of the active profile selected in Phase 2.
+- Keep profile and autofill-related columns synchronized across
+  `packages/shared`, `packages/db` migrations, web `/api/profiles`, and
+  extension profile + autofill UIs.
+- Tighten extension host permissions toward supported ATS origins when Phase 4
+  job extraction lands.
 
 ## Product Roadmap Context
 

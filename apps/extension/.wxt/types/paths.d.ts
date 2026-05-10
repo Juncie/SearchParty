@@ -5,7 +5,9 @@ declare module "wxt/browser" {
   export type PublicPath =
     | ""
     | "/"
+    | "/autofill-test-form.html"
     | "/background.js"
+    | "/content-scripts/autofill.js"
     | "/content-scripts/content.js"
     | "/icon/128.png"
     | "/icon/16.png"

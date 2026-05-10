@@ -1,5 +1,6 @@
 import { and, desc, eq, inArray } from 'drizzle-orm'
 import {
+  accountSetupSchema,
   activeApplicantProfileInputSchema,
   applicantProfileInputSchema,
   applicantProfileSchema,
@@ -134,6 +135,13 @@ export async function createApplicantProfile(userId: string, rawInput: unknown) 
       targetRole: input.targetRole,
       summary: input.summary,
       preferredTone: input.preferredTone,
+      firstName: input.firstName,
+      lastName: input.lastName,
+      phone: input.phone,
+      address: input.address,
+      linkedinUrl: input.linkedinUrl,
+      githubUrl: input.githubUrl,
+      portfolioUrl: input.portfolioUrl,
     })
 
     await replaceNestedProfileData(tx, profileId, input)
@@ -175,6 +183,13 @@ export async function updateApplicantProfile(
     if (input.preferredTone !== undefined) {
       profileUpdates.preferredTone = input.preferredTone
     }
+    if (input.firstName !== undefined) profileUpdates.firstName = input.firstName
+    if (input.lastName !== undefined) profileUpdates.lastName = input.lastName
+    if (input.phone !== undefined) profileUpdates.phone = input.phone
+    if (input.address !== undefined) profileUpdates.address = input.address
+    if (input.linkedinUrl !== undefined) profileUpdates.linkedinUrl = input.linkedinUrl
+    if (input.githubUrl !== undefined) profileUpdates.githubUrl = input.githubUrl
+    if (input.portfolioUrl !== undefined) profileUpdates.portfolioUrl = input.portfolioUrl
 
     if (Object.keys(profileUpdates).length > 0) {
       await tx
@@ -241,4 +256,75 @@ export async function setActiveApplicantProfile(userId: string, rawInput: unknow
     })
 
   return listApplicantProfiles(userId)
+}
+
+export async function readAccountSetup(userId: string) {
+  const settings = await db
+    .select()
+    .from(userProfileSettings)
+    .where(eq(userProfileSettings.userId, userId))
+    .limit(1)
+
+  if (settings.length === 0) {
+    return {
+      firstName: '',
+      lastName: '',
+      phone: '',
+      addressStreet: '',
+      addressState: '',
+      addressCity: '',
+      addressZip: '',
+      addressUnit: '',
+      urls: [],
+    }
+  }
+
+  const row = settings[0]
+  return {
+    firstName: row.firstName,
+    lastName: row.lastName,
+    phone: row.phone,
+    addressStreet: row.addressStreet,
+    addressState: row.addressState,
+    addressCity: row.addressCity,
+    addressZip: row.addressZip,
+    addressUnit: row.addressUnit,
+    urls: row.urls,
+  }
+}
+
+export async function updateAccountSetup(userId: string, rawInput: unknown) {
+  const input = accountSetupSchema.parse(rawInput)
+
+  await db
+    .insert(userProfileSettings)
+    .values({
+      userId,
+      firstName: input.firstName,
+      lastName: input.lastName,
+      phone: input.phone,
+      addressStreet: input.addressStreet,
+      addressState: input.addressState,
+      addressCity: input.addressCity,
+      addressZip: input.addressZip,
+      addressUnit: input.addressUnit,
+      urls: input.urls,
+    })
+    .onConflictDoUpdate({
+      target: userProfileSettings.userId,
+      set: {
+        firstName: input.firstName,
+        lastName: input.lastName,
+        phone: input.phone,
+        addressStreet: input.addressStreet,
+        addressState: input.addressState,
+        addressCity: input.addressCity,
+        addressZip: input.addressZip,
+        addressUnit: input.addressUnit,
+        urls: input.urls,
+        updatedAt: new Date(),
+      },
+    })
+
+  return readAccountSetup(userId)
 }

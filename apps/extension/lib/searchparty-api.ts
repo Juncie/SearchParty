@@ -4,6 +4,8 @@ import {
   applicantProfilesResponseSchema,
   currentUserResponseSchema,
   healthResponseSchema,
+  accountSetupSchema,
+  type AccountSetup,
   type ApplicantProfileInput,
   type ApplicantProfileUpdate,
   type ApplicantProfilesResponse,
@@ -168,6 +170,21 @@ export async function signInWithEmail(payload: {
     method: "POST",
     body: JSON.stringify(payload),
   });
+}
+
+export async function getAccountSetup(): Promise<AccountSetup> {
+  const data = await callSearchPartyEndpoint("/api/account", { method: "GET" });
+  return accountSetupSchema.parse(data);
+}
+
+export async function updateAccountSetup(
+  setup: AccountSetup
+): Promise<AccountSetup> {
+  const data = await callSearchPartyEndpoint("/api/account", {
+    method: "PUT",
+    body: JSON.stringify(setup),
+  });
+  return accountSetupSchema.parse(data);
 }
 
 export async function getAuthSession() {

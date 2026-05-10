@@ -1,5 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Skeleton } from "@/components/ui/skeleton";
 import { SettingBlockCard } from "@/components/settings/SettingBlockCard";
 import { SettingsSectionCard } from "@/components/settings/SettingsSectionCard";
 import type { AuthSession } from "@/lib/searchparty-api";
@@ -10,8 +11,8 @@ interface ProfileSettingsSectionProps {
   status: "idle" | "saving" | "checking" | "signing-out";
   onNameChange: (value: string) => void;
   onSaveName: () => void;
-  onCheckConnection: () => void;
   onSignOut: () => void;
+  onEditAccount: () => void;
 }
 
 export function ProfileSettingsSection({
@@ -20,54 +21,31 @@ export function ProfileSettingsSection({
   status,
   onNameChange,
   onSaveName,
-  onCheckConnection,
   onSignOut,
+  onEditAccount,
 }: ProfileSettingsSectionProps) {
   return (
-    <SettingsSectionCard title="Profile">
-      <SettingBlockCard
-        title="Personal information"
-        description={`Signed in as ${session?.user.email ?? "loading..."}.`}
+    <SettingBlockCard
+      title="Global account"
+      description="Edit your core details and custom URLs."
+      className="col-span-full"
+    >
+      <Button
+        variant="outline"
+        type="button"
+        onClick={onEditAccount}
+        disabled={status !== "idle"}
       >
-        <Input
-          value={name}
-          onChange={(event) => onNameChange(event.target.value)}
-          placeholder="Your name"
-        />
-        <div className="panel-actions">
-          <Button
-            type="button"
-            onClick={onSaveName}
-            disabled={status !== "idle"}
-          >
-            {status === "saving" ? "Saving..." : "Save name"}
-          </Button>
-          <Button
-            variant="outline"
-            type="button"
-            onClick={onSignOut}
-            disabled={status !== "idle"}
-          >
-            {status === "signing-out"
-              ? "Signing out..."
-              : "Sign out"}
-          </Button>
-        </div>
-      </SettingBlockCard>
-
-      <SettingBlockCard
-        title="SearchParty web app"
-        description="Verify the extension can reach the local web app."
+        Edit Account Details
+      </Button>
+      <Button
+        variant="secondary"
+        type="button"
+        onClick={onEditAccount}
+        disabled={status !== "idle"}
       >
-        <Button
-          variant="outline"
-          type="button"
-          onClick={onCheckConnection}
-          disabled={status !== "idle"}
-        >
-          {status === "checking" ? "Checking..." : "Check connection"}
-        </Button>
-      </SettingBlockCard>
-    </SettingsSectionCard>
+        Logout
+      </Button>
+    </SettingBlockCard>
   );
 }

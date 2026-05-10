@@ -1,5 +1,8 @@
 import * as React from "react";
-import { cva, type VariantProps } from "class-variance-authority";
+import {
+  cva,
+  type VariantProps,
+} from "class-variance-authority";
 import { Slot } from "radix-ui";
 
 import { cn } from "@/lib/utils";
@@ -9,7 +12,8 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
-        default: "bg-primary text-primary-foreground hover:bg-primary/90 hover:shadow-sm",
+        default:
+          "bg-primary text-primary-foreground hover:bg-primary/90 hover:shadow-sm",
         outline:
           "border-border hover:bg-input/50 hover:text-foreground aria-expanded:bg-muted aria-expanded:text-foreground dark:bg-input/30",
         secondary:
@@ -28,9 +32,12 @@ const buttonVariants = cva(
         lg: "h-10 gap-2 px-5 text-base has-data-[icon=inline-end]:pr-4 has-data-[icon=inline-start]:pl-4 [&_svg:not([class*='size-'])]:size-4.5",
         xl: "h-12 gap-2.5 px-6 text-lg has-data-[icon=inline-end]:pr-5 has-data-[icon=inline-start]:pl-5 [&_svg:not([class*='size-'])]:size-5",
         icon: "size-9 [&_svg:not([class*='size-'])]:size-4",
-        "icon-xs": "size-6 rounded-sm [&_svg:not([class*='size-'])]:size-2.5",
-        "icon-sm": "size-8 [&_svg:not([class*='size-'])]:size-3.5",
-        "icon-lg": "size-10 [&_svg:not([class*='size-'])]:size-4.5",
+        "icon-xs":
+          "size-6 rounded-sm [&_svg:not([class*='size-'])]:size-2.5",
+        "icon-sm":
+          "size-8 [&_svg:not([class*='size-'])]:size-3.5",
+        "icon-lg":
+          "size-10 [&_svg:not([class*='size-'])]:size-4.5",
       },
     },
     defaultVariants: {
@@ -57,7 +64,9 @@ function Button({
       data-slot="button"
       data-variant={variant}
       data-size={size}
-      className={cn(buttonVariants({ variant, size, className }))}
+      className={cn(
+        buttonVariants({ variant, size, className })
+      )}
       {...props}
     />
   );

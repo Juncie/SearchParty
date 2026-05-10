@@ -85,6 +85,13 @@ export const applicantProfiles = pgTable('applicant_profiles', {
   targetRole: text('target_role').notNull(),
   summary: text('summary').notNull().default(''),
   preferredTone: text('preferred_tone').notNull().default('professional'),
+  firstName: text('first_name').notNull().default(''),
+  lastName: text('last_name').notNull().default(''),
+  phone: text('phone').notNull().default(''),
+  address: text('address').notNull().default(''),
+  linkedinUrl: text('linkedin_url').notNull().default(''),
+  githubUrl: text('github_url').notNull().default(''),
+  portfolioUrl: text('portfolio_url').notNull().default(''),
   createdAt: timestamp('created_at').notNull().defaultNow(),
   updatedAt: timestamp('updated_at')
     .notNull()
@@ -144,6 +151,18 @@ export const userProfileSettings = pgTable('user_profile_settings', {
     () => applicantProfiles.id,
     { onDelete: 'set null' },
   ),
+  firstName: text('first_name').notNull().default(''),
+  lastName: text('last_name').notNull().default(''),
+  phone: text('phone').notNull().default(''),
+  addressStreet: text('address_street').notNull().default(''),
+  addressUnit: text('address_unit').notNull().default(''),
+  addressCity: text('address_city').notNull().default(''),
+  addressState: text('address_state').notNull().default(''),
+  addressZip: text('address_zip').notNull().default(''),
+  urls: jsonb('urls')
+    .$type<{ label: string; url: string }[]>()
+    .notNull()
+    .default(sql`'[]'::jsonb`),
   updatedAt: timestamp('updated_at')
     .notNull()
     .defaultNow()

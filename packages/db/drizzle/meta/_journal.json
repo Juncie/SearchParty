@@ -22,6 +22,27 @@
       "when": 1778179860000,
       "tag": "0002_applicant_profiles",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1778200000000,
+      "tag": "0003_profile_autofill_contact",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1778200000001,
+      "tag": "0004_account_setup",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1778200000002,
+      "tag": "0005_account_address_parts",
+      "breakpoints": true
     }
   ]
 }

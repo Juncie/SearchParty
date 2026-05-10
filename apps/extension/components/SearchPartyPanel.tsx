@@ -9,6 +9,12 @@ import {
 import { useEffect, useState } from "react";
 
 import type { ExtensionSurface } from "@/components/extension-surface";
+import {
+  BottomNav,
+  EXTENSION_BOTTOM_NAV_SCROLL_PADDING,
+} from "@/components/navigation/BottomNav";
+import { AccountSetupPage } from "@/components/screens/AccountSetupPage";
+import { AutofillPage } from "@/components/screens/AutofillPage";
 import { DashboardPage } from "@/components/screens/DashboardPage";
 import { LoginPage } from "@/components/screens/LoginPage";
 import { ProfileEditPage } from "@/components/screens/ProfileEditPage";
@@ -44,11 +50,18 @@ function ExtensionShell({ surface }: SearchPartyPanelProps) {
         isPopup
           ? "shell-popup min-h-0 flex-1 flex-col"
           : "shell-sidepanel",
+        "flex min-h-0 flex-col gap-0",
       )}
     >
-      <div className="extension-outlet flex min-h-0 w-full min-w-0 max-w-full flex-1 flex-col">
+      <div
+        className="extension-outlet flex min-h-0 w-full min-w-0 max-w-full flex-1 flex-col overflow-y-auto"
+        style={{
+          paddingBottom: EXTENSION_BOTTOM_NAV_SCROLL_PADDING,
+        }}
+      >
         <Outlet />
       </div>
+      <BottomNav />
     </main>
   );
 }
@@ -74,6 +87,12 @@ function createExtensionRouter(surface: ExtensionSurface) {
     getParentRoute: () => rootRoute,
     path: "/dashboard",
     component: () => <DashboardPage surface={surface} />,
+  });
+
+  const autofillRoute = createRoute({
+    getParentRoute: () => rootRoute,
+    path: "/autofill",
+    component: () => <AutofillPage surface={surface} />,
   });
 
   const newProfileRoute = createRoute({
@@ -103,13 +122,21 @@ function createExtensionRouter(surface: ExtensionSurface) {
     component: () => <SettingsPage surface={surface} />,
   });
 
+  const accountSetupRoute = createRoute({
+    getParentRoute: () => rootRoute,
+    path: "/settings/account",
+    component: () => <AccountSetupPage surface={surface} />,
+  });
+
   const routeTree = rootRoute.addChildren([
     indexRoute,
     loginRoute,
     dashboardRoute,
+    autofillRoute,
     newProfileRoute,
     editProfileRoute,
     settingsRoute,
+    accountSetupRoute,
   ]);
 
   return createRouter({

@@ -30,7 +30,9 @@ export function AppearanceSettingsSection({
           className="flex h-9 w-full rounded-[10px] border border-input bg-input/10 px-3.5 py-2 text-sm focus-visible:border-primary/50 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring/40"
           value={theme}
           onChange={(event) =>
-            onThemeChange(event.target.value as ExtensionThemePreference)
+            onThemeChange(
+              event.target.value as ExtensionThemePreference
+            )
           }
         >
           <option value="system">System</option>
@@ -41,7 +43,7 @@ export function AppearanceSettingsSection({
 
       <SettingBlockCard
         title="Open behavior"
-        description={`Current surface: ${surface}. This controls what happens when you click the toolbar icon.`}
+        description={`Current: ${surface[0].toUpperCase() + surface.slice(1)}. This controls what happens when you click the toolbar icon.`}
       >
         <select
           className="flex h-9 w-full rounded-[10px] border border-input bg-input/10 px-3.5 py-2 text-sm focus-visible:border-primary/50 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring/40"

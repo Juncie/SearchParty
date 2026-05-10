@@ -12,7 +12,8 @@
     "zip": "wxt zip",
     "zip:firefox": "wxt zip -b firefox",
     "compile": "tsc --noEmit",
-    "postinstall": "wxt prepare"
+    "postinstall": "wxt prepare",
+    "serve:test-form": "wxt build && npx --yes serve@14 .output/chrome-mv3 -l 7242"
   },
   "dependencies": {
     "@searchparty/shared": "workspace:*",

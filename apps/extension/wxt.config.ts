@@ -5,8 +5,12 @@ export default defineConfig({
   manifest: {
     name: "SearchParty",
     description: "Foundation extension for SearchParty job application workflows.",
-    permissions: ["sidePanel", "storage"],
-    host_permissions: ["http://localhost:3001/*"],
+    permissions: ["sidePanel", "storage", "tabs"],
+    host_permissions: [
+      "http://localhost:3001/*",
+      "http://*/*",
+      "https://*/*",
+    ],
     side_panel: {
       default_path: "sidepanel.html",
     },

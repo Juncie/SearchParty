@@ -1,9 +1,9 @@
 import { useNavigate } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
-import { ForgotPassword } from "@/components/auth/ForgotPassword";
-import { Login } from "@/components/auth/Login";
-import { SignUp } from "@/components/auth/SignUp";
+import { LoginAuthPanels } from "@/components/auth/LoginAuthPanels";
+import { LoginAuthRoot } from "@/components/auth/LoginAuthRoot";
+import { LoginSessionSkeleton } from "@/components/auth/LoginSessionSkeleton";
 import type {
   AuthDensity,
   AuthScreenMode,
@@ -14,7 +14,6 @@ import {
   signInWithEmail,
   signUpWithEmail,
 } from "@/lib/searchparty-api";
-import { cn } from "@/lib/utils";
 
 interface LoginPageProps {
   surface: ExtensionSurface;
@@ -33,6 +32,11 @@ export function LoginPage({ surface }: LoginPageProps) {
   const [serverError, setServerError] = useState<
     string | null
   >(null);
+
+  const setAuthMode = useCallback((next: AuthScreenMode) => {
+    setServerError(null);
+    setMode(next);
+  }, []);
 
   useEffect(() => {
     const checkSession = async () => {
@@ -123,33 +127,14 @@ export function LoginPage({ surface }: LoginPageProps) {
 
   if (isCheckingSession) {
     return (
-      <div
-        className={cn(
-          "auth-layout-root",
-          isSidePanel && "justify-center py-10",
-        )}
-      >
-        <div
-          className={cn(
-            "flex min-h-0 w-full flex-1 flex-col items-center justify-center gap-2 py-4",
-          )}
-        >
-          <p className="island-kicker">Search Party</p>
-          <p className="auth-session-check__hint">
-            Checking your session...
-          </p>
-        </div>
-      </div>
+      <LoginAuthRoot isSidePanel={isSidePanel} phase="loading">
+        <LoginSessionSkeleton />
+      </LoginAuthRoot>
     );
   }
 
   return (
-    <div
-      className={cn(
-        "auth-layout-root",
-        isSidePanel && "justify-center",
-      )}
-    >
+    <LoginAuthRoot isSidePanel={isSidePanel} phase="ready">
       <div className="auth-layout">
         <img
           src="/searchparty.svg"
@@ -162,56 +147,16 @@ export function LoginPage({ surface }: LoginPageProps) {
           <p className="auth-layout__lede lede">{description}</p>
         </div>
 
-        {mode === "login" ? (
-          <div className="auth-layout__form-slot">
-            <Login
-              density={density}
-              onSubmit={handleLoginSubmit}
-              isSubmitting={isSubmitting}
-              serverError={
-                mode === "login" ? serverError : null
-              }
-              setMode={(nextMode) => {
-                setServerError(null);
-                setMode(nextMode);
-              }}
-            />
-          </div>
-        ) : null}
-
-        {mode === "forgotPassword" ? (
-          <div className="auth-layout__form-slot">
-            <ForgotPassword
-              density={density}
-              onSubmit={() => {
-                setServerError(null);
-                setMode("login");
-              }}
-              setMode={(nextMode) => {
-                setServerError(null);
-                setMode(nextMode);
-              }}
-            />
-          </div>
-        ) : null}
-
-        {mode === "signUp" ? (
-          <div className="auth-layout__form-slot">
-            <SignUp
-              density={density}
-              onSubmit={handleSignUpSubmit}
-              isSubmitting={isSubmitting}
-              serverError={
-                mode === "signUp" ? serverError : null
-              }
-              setMode={(nextMode) => {
-                setServerError(null);
-                setMode(nextMode);
-              }}
-            />
-          </div>
-        ) : null}
+        <LoginAuthPanels
+          density={density}
+          mode={mode}
+          setAuthMode={setAuthMode}
+          serverError={serverError}
+          isSubmitting={isSubmitting}
+          onLoginSubmit={handleLoginSubmit}
+          onSignUpSubmit={handleSignUpSubmit}
+        />
       </div>
-    </div>
+    </LoginAuthRoot>
   );
 }
