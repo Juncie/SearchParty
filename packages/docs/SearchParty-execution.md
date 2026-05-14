@@ -38,13 +38,13 @@ Centralized DB logic.
 - DB client
 - Query utilities
 
-## `/packages/ai`
+## `/packages/ai` (planned)
 
-### Purpose
+Not yet a workspace package. TanStack AI-related dependencies are installed in
+`apps/web`; product workflows remain to be wired. When introduced, this package
+would centralize prompts and provider-facing orchestration.
 
-AI orchestration.
-
-### Responsibilities
+### Intended responsibilities
 
 - Prompt templates
 - AI service wrappers
@@ -52,24 +52,25 @@ AI orchestration.
 - Cover letter generation
 - Job analysis
 
-## `/packages/documents`
+## `/packages/documents` (planned)
 
-### Purpose
+Not yet in the repository. Document export and template logic may land here or
+coexist with `apps/web` until the boundary is clear.
 
-Document generation/export.
-
-### Responsibilities
+### Intended responsibilities
 
 - DOCX generation
 - PDF generation
 - Resume templates
 - Cover letter templates
 
-## `/packages/ui` (future)
+## `/packages/ui` (implemented)
 
 ### Purpose
 
-Shared design system/components.
+Shared design tokens and global styles consumed by `apps/web` and
+`apps/extension` (see `packages/ui/src/styles/theme.css` and
+`packages/docs/architecture.md`).
 
 ---
 
@@ -388,7 +389,10 @@ pnpm --filter search-party-extension build
 
 ### Goals
 
-Reduce repetitive typing.
+Reduce repetitive typing while moving toward the **form intelligence** stack
+described in `plans/architecture-plan.md` and `plans/stack-upgrade.md`: Fuse.js
+semantic matching, explainable scores, ambiguity handling, and safe execution (see
+`packages/docs/architecture.md` for what is implemented today).
 
 ### Tasks
 
@@ -415,11 +419,21 @@ Use:
 - aria labels
 - autocomplete attributes
 
-**Confidence System**
+Weighted fuzzy matching is implemented in `@searchparty/shared` using **Fuse.js**
+(`packages/shared/src/autofill/`). Extension-side extraction and apply paths live
+under `apps/extension/lib/autofill/` and `apps/extension/entrypoints/autofill.content.ts`.
 
-- 90%+ = auto-fill
-- 70–89% = suggest
-- Below 70% = prompt for user confirmation
+**Confidence System** (implemented thresholds in `@searchparty/shared`)
+
+Numeric scores map to tiers via `confidenceScoreToTier` / ambiguity downgrade:
+
+- **auto**: score ≥ 88
+- **suggest**: score ≥ 70
+- **confirm**: score ≥ 50
+- **ignore**: scores below 50
+
+(Earlier roadmap copy used round percentages like “90%+”; the shipped thresholds
+above are authoritative.)
 
 **Autofill UI**
 
@@ -432,6 +446,10 @@ Use:
 ### Success Criteria
 
 User can autofill common job fields.
+
+**Testing:** Vitest covers shared scoring behavior; **Playwright** is listed under
+`apps/extension` devDependencies for future browser-level fixtures—not used in the
+shipped extension runtime.
 
 ## Phase 4 — Job Extraction
 

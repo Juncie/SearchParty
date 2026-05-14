@@ -47,6 +47,50 @@
   --accent-foreground: oklch(0.218 0.008 223.9);
   --destructive: oklch(0.577 0.245 27.325);
   --destructive-foreground: oklch(0.577 0.245 27.325);
+  /* Grouped tool status (e.g. autofill preview sections): success / caution / danger */
+  --status-success-fg: var(--palm);
+  --status-success-bg: color-mix(in oklab, var(--palm) 16%, transparent);
+  --status-caution-fg: oklch(0.44 0.11 72);
+  --status-caution-bg: oklch(0.955 0.04 88);
+  --status-danger-fg: var(--destructive);
+  --status-danger-bg: color-mix(
+    in oklab,
+    var(--destructive) 12%,
+    transparent
+  );
+  /* Autofill scan list: tier chips (readable on chip-bg in light + dark) */
+  --autofill-tier-auto-fg: var(--sea-ink);
+  --autofill-tier-auto-bg: color-mix(
+    in oklab,
+    var(--lagoon) 18%,
+    var(--chip-bg)
+  );
+  --autofill-tier-auto-border: color-mix(
+    in oklab,
+    var(--lagoon-deep) 42%,
+    var(--chip-line)
+  );
+  --autofill-tier-suggest-fg: var(--sea-ink-soft);
+  --autofill-tier-suggest-bg: var(--chip-bg);
+  --autofill-tier-suggest-border: var(--chip-line);
+  --autofill-tier-confirm-fg: var(--destructive);
+  --autofill-tier-confirm-bg: color-mix(
+    in oklab,
+    var(--destructive) 12%,
+    var(--chip-bg)
+  );
+  --autofill-tier-confirm-border: color-mix(
+    in oklab,
+    var(--destructive) 45%,
+    var(--chip-line)
+  );
+  --autofill-tier-ignore-fg: var(--sea-ink-soft);
+  --autofill-tier-ignore-bg: color-mix(
+    in oklab,
+    var(--muted) 35%,
+    var(--chip-bg)
+  );
+  --autofill-tier-ignore-border: var(--chip-line);
   --button-primary: var(--lagoon-deep);
   --button-primary-hover: var(--lagoon);
   --button-primary-foreground: oklch(0.984 0.014 180.72);
@@ -134,6 +178,44 @@
   --accent-foreground: oklch(0.987 0.002 197.1);
   --destructive: oklch(0.704 0.191 22.216);
   --destructive-foreground: oklch(0.637 0.237 25.331);
+  --status-success-fg: var(--palm);
+  --status-success-bg: color-mix(in oklab, var(--palm) 18%, transparent);
+  --status-caution-fg: oklch(0.88 0.09 86);
+  --status-caution-bg: oklch(0.3 0.045 72);
+  --status-danger-fg: oklch(0.82 0.12 22);
+  --status-danger-bg: color-mix(
+    in oklab,
+    var(--destructive) 22%,
+    transparent
+  );
+  --autofill-tier-auto-fg: oklch(0.94 0.04 186);
+  --autofill-tier-auto-bg: color-mix(
+    in oklab,
+    var(--lagoon-deep) 32%,
+    var(--chip-bg)
+  );
+  --autofill-tier-auto-border: color-mix(
+    in oklab,
+    var(--lagoon-deep) 58%,
+    transparent
+  );
+  --autofill-tier-suggest-fg: oklch(0.9 0.02 200);
+  --autofill-tier-suggest-bg: var(--chip-bg);
+  --autofill-tier-suggest-border: var(--chip-line);
+  --autofill-tier-confirm-fg: oklch(0.9 0.12 22);
+  --autofill-tier-confirm-bg: color-mix(
+    in oklab,
+    var(--destructive) 28%,
+    var(--chip-bg)
+  );
+  --autofill-tier-confirm-border: color-mix(
+    in oklab,
+    var(--destructive) 55%,
+    transparent
+  );
+  --autofill-tier-ignore-fg: var(--sea-ink-soft);
+  --autofill-tier-ignore-bg: var(--chip-bg);
+  --autofill-tier-ignore-border: var(--chip-line);
   --button-primary: var(--lagoon);
   --button-primary-hover: var(--lagoon-deep);
   --button-primary-foreground: oklch(0.148 0.004 228.8);

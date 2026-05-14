@@ -1,5 +1,10 @@
 import { useNavigate } from "@tanstack/react-router";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
 
 import { LoginAuthPanels } from "@/components/auth/LoginAuthPanels";
 import { LoginAuthRoot } from "@/components/auth/LoginAuthRoot";
@@ -14,6 +19,7 @@ import {
   signInWithEmail,
   signUpWithEmail,
 } from "@/lib/searchparty-api";
+import { navigateAfterAuth } from "@/lib/post-auth-navigation";
 
 interface LoginPageProps {
   surface: ExtensionSurface;
@@ -33,17 +39,20 @@ export function LoginPage({ surface }: LoginPageProps) {
     string | null
   >(null);
 
-  const setAuthMode = useCallback((next: AuthScreenMode) => {
-    setServerError(null);
-    setMode(next);
-  }, []);
+  const setAuthMode = useCallback(
+    (next: AuthScreenMode) => {
+      setServerError(null);
+      setMode(next);
+    },
+    []
+  );
 
   useEffect(() => {
     const checkSession = async () => {
       try {
         const currentSession = await getAuthSession();
         if (currentSession?.session) {
-          void navigate({ to: "/dashboard" });
+          await navigateAfterAuth(navigate);
         }
       } catch {
         // Ignore session check errors and allow user sign-in.
@@ -67,14 +76,14 @@ export function LoginPage({ surface }: LoginPageProps) {
   }, [mode]);
 
   const description = useMemo(() => {
-    if (mode === "signUp") {
-      return "Create your SearchParty account to save jobs and automate applications.";
+    switch (mode) {
+      case "signUp":
+        return "Create your SearchParty account to save jobs and automate applications.";
+      case "forgotPassword":
+        return "Enter your account email and we'll send reset instructions.";
+      default:
+        return "Let's Continue With Your Search";
     }
-    if (mode === "forgotPassword") {
-      return "Enter your account email and we'll send reset instructions.";
-    }
-
-    return "Sign in to continue managing your job search from the extension.";
   }, [mode]);
 
   const handleLoginSubmit = async (payload: {
@@ -86,7 +95,7 @@ export function LoginPage({ surface }: LoginPageProps) {
 
     try {
       await signInWithEmail(payload);
-      void navigate({ to: "/dashboard" });
+      await navigateAfterAuth(navigate);
     } catch (error) {
       setServerError(
         error instanceof Error
@@ -113,7 +122,7 @@ export function LoginPage({ surface }: LoginPageProps) {
         email: payload.email,
         password: payload.password,
       });
-      void navigate({ to: "/dashboard" });
+      await navigateAfterAuth(navigate);
     } catch (error) {
       setServerError(
         error instanceof Error
@@ -127,7 +136,10 @@ export function LoginPage({ surface }: LoginPageProps) {
 
   if (isCheckingSession) {
     return (
-      <LoginAuthRoot isSidePanel={isSidePanel} phase="loading">
+      <LoginAuthRoot
+        isSidePanel={isSidePanel}
+        phase="loading"
+      >
         <LoginSessionSkeleton />
       </LoginAuthRoot>
     );
@@ -144,7 +156,9 @@ export function LoginPage({ surface }: LoginPageProps) {
         <div className="auth-layout__intro">
           <p className="island-kicker">Search Party</p>
           <h1 className="auth-layout__title">{heading}</h1>
-          <p className="auth-layout__lede lede">{description}</p>
+          <p className="auth-layout__lede lede">
+            {description}
+          </p>
         </div>
 
         <LoginAuthPanels

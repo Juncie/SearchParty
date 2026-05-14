@@ -1,0 +1,18 @@
+{
+  "name": "@searchparty/data",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./profile-questions": {
+      "types": "./profile-questions.ts",
+      "default": "./profile-questions.ts"
+    }
+  },
+  "scripts": {
+    "lint": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "typescript": "^6.0.2"
+  }
+}

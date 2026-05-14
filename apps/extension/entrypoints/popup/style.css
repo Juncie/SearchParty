@@ -68,6 +68,12 @@
   );
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
+  --color-sp-status-success: var(--status-success-fg);
+  --color-sp-status-success-muted: var(--status-success-bg);
+  --color-sp-status-caution: var(--status-caution-fg);
+  --color-sp-status-caution-muted: var(--status-caution-bg);
+  --color-sp-status-danger: var(--status-danger-fg);
+  --color-sp-status-danger-muted: var(--status-danger-bg);
 }
 
 @layer base {

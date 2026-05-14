@@ -5,11 +5,27 @@ import {
   confidenceScoreToTier,
   matchDomFieldToAutofill,
   normalizeAutofillHaystack,
+  normalizeControlType,
   splitDisplayName,
   valueForAutofillKind,
 } from "./autofill";
 
 describe("matchDomFieldToAutofill", () => {
+  it("matches Breezy-style full name fields as a single value", () => {
+    const result = matchDomFieldToAutofill({
+      tagName: "input",
+      name: "name",
+      id: "candidate-name",
+      type: "text",
+      placeholder: "Full Name",
+      ariaLabel: "",
+      autocomplete: "",
+      labelText: "Full Name",
+    });
+    expect(result.kind).toBe("fullName");
+    expect(result.score).toBeGreaterThanOrEqual(88);
+  });
+
   it("prefers autocomplete email", () => {
     const result = matchDomFieldToAutofill({
       tagName: "input",
@@ -71,6 +87,7 @@ describe("buildAutofillPayloadValues", () => {
     });
     expect(values.firstName).toBe("Jamie");
     expect(values.lastName).toBe("Doe");
+    expect(values.fullName).toBe("Jamie Doe");
     expect(values.email).toBe("jamie@example.com");
   });
 
@@ -134,6 +151,13 @@ describe("normalizeAutofillHaystack", () => {
       labelText: "",
     });
     expect(h).toContain("first name");
+  });
+});
+
+describe("normalizeControlType", () => {
+  it("keeps tel distinct from phone for HTML type hints", () => {
+    expect(normalizeControlType("tel")).toBe("tel");
+    expect(normalizeControlType("email")).toBe("email");
   });
 });
 

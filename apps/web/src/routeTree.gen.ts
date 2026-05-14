@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ProfileNewRouteImport } from './routes/profile.new'
 import { Route as ApiTodosRouteImport } from './routes/api/todos'
 import { Route as ApiAccountRouteImport } from './routes/api/account'
 import { Route as ApiProfilesIndexRouteImport } from './routes/api/profiles/index'
@@ -19,10 +20,16 @@ import { Route as ApiTrpcSplatRouteImport } from './routes/api.trpc.$'
 import { Route as ApiProfilesActiveRouteImport } from './routes/api/profiles/active'
 import { Route as ApiProfilesProfileIdRouteImport } from './routes/api/profiles/$profileId'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
+import { Route as ApiAccountOnboardingRouteImport } from './routes/api/account/onboarding'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ProfileNewRoute = ProfileNewRouteImport.update({
+  id: '/profile/new',
+  path: '/profile/new',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiTodosRoute = ApiTodosRouteImport.update({
@@ -70,11 +77,18 @@ const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
   path: '/api/auth/$',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiAccountOnboardingRoute = ApiAccountOnboardingRouteImport.update({
+  id: '/onboarding',
+  path: '/onboarding',
+  getParentRoute: () => ApiAccountRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/api/account': typeof ApiAccountRoute
+  '/api/account': typeof ApiAccountRouteWithChildren
   '/api/todos': typeof ApiTodosRoute
+  '/profile/new': typeof ProfileNewRoute
+  '/api/account/onboarding': typeof ApiAccountOnboardingRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/profiles/$profileId': typeof ApiProfilesProfileIdRoute
   '/api/profiles/active': typeof ApiProfilesActiveRoute
@@ -85,8 +99,10 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/api/account': typeof ApiAccountRoute
+  '/api/account': typeof ApiAccountRouteWithChildren
   '/api/todos': typeof ApiTodosRoute
+  '/profile/new': typeof ProfileNewRoute
+  '/api/account/onboarding': typeof ApiAccountOnboardingRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/profiles/$profileId': typeof ApiProfilesProfileIdRoute
   '/api/profiles/active': typeof ApiProfilesActiveRoute
@@ -98,8 +114,10 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
-  '/api/account': typeof ApiAccountRoute
+  '/api/account': typeof ApiAccountRouteWithChildren
   '/api/todos': typeof ApiTodosRoute
+  '/profile/new': typeof ProfileNewRoute
+  '/api/account/onboarding': typeof ApiAccountOnboardingRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/profiles/$profileId': typeof ApiProfilesProfileIdRoute
   '/api/profiles/active': typeof ApiProfilesActiveRoute
@@ -114,6 +132,8 @@ export interface FileRouteTypes {
     | '/'
     | '/api/account'
     | '/api/todos'
+    | '/profile/new'
+    | '/api/account/onboarding'
     | '/api/auth/$'
     | '/api/profiles/$profileId'
     | '/api/profiles/active'
@@ -126,6 +146,8 @@ export interface FileRouteTypes {
     | '/'
     | '/api/account'
     | '/api/todos'
+    | '/profile/new'
+    | '/api/account/onboarding'
     | '/api/auth/$'
     | '/api/profiles/$profileId'
     | '/api/profiles/active'
@@ -138,6 +160,8 @@ export interface FileRouteTypes {
     | '/'
     | '/api/account'
     | '/api/todos'
+    | '/profile/new'
+    | '/api/account/onboarding'
     | '/api/auth/$'
     | '/api/profiles/$profileId'
     | '/api/profiles/active'
@@ -149,8 +173,9 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  ApiAccountRoute: typeof ApiAccountRoute
+  ApiAccountRoute: typeof ApiAccountRouteWithChildren
   ApiTodosRoute: typeof ApiTodosRoute
+  ProfileNewRoute: typeof ProfileNewRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
   ApiProfilesProfileIdRoute: typeof ApiProfilesProfileIdRoute
   ApiProfilesActiveRoute: typeof ApiProfilesActiveRoute
@@ -167,6 +192,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/profile/new': {
+      id: '/profile/new'
+      path: '/profile/new'
+      fullPath: '/profile/new'
+      preLoaderRoute: typeof ProfileNewRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/todos': {
@@ -232,13 +264,33 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiAuthSplatRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/account/onboarding': {
+      id: '/api/account/onboarding'
+      path: '/onboarding'
+      fullPath: '/api/account/onboarding'
+      preLoaderRoute: typeof ApiAccountOnboardingRouteImport
+      parentRoute: typeof ApiAccountRoute
+    }
   }
 }
 
+interface ApiAccountRouteChildren {
+  ApiAccountOnboardingRoute: typeof ApiAccountOnboardingRoute
+}
+
+const ApiAccountRouteChildren: ApiAccountRouteChildren = {
+  ApiAccountOnboardingRoute: ApiAccountOnboardingRoute,
+}
+
+const ApiAccountRouteWithChildren = ApiAccountRoute._addFileChildren(
+  ApiAccountRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  ApiAccountRoute: ApiAccountRoute,
+  ApiAccountRoute: ApiAccountRouteWithChildren,
   ApiTodosRoute: ApiTodosRoute,
+  ProfileNewRoute: ProfileNewRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
   ApiProfilesProfileIdRoute: ApiProfilesProfileIdRoute,
   ApiProfilesActiveRoute: ApiProfilesActiveRoute,

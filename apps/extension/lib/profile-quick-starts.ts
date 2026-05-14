@@ -9,6 +9,7 @@ const profileAutofillDefaults: Pick<
   | "linkedinUrl"
   | "githubUrl"
   | "portfolioUrl"
+  | "onboardingAnswers"
 > = {
   firstName: "",
   lastName: "",
@@ -17,6 +18,7 @@ const profileAutofillDefaults: Pick<
   linkedinUrl: "",
   githubUrl: "",
   portfolioUrl: "",
+  onboardingAnswers: {},
 };
 
 export interface ProfileQuickStart {

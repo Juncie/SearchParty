@@ -92,6 +92,10 @@ export const applicantProfiles = pgTable('applicant_profiles', {
   linkedinUrl: text('linkedin_url').notNull().default(''),
   githubUrl: text('github_url').notNull().default(''),
   portfolioUrl: text('portfolio_url').notNull().default(''),
+  onboardingAnswers: jsonb('onboarding_answers')
+    .$type<Record<string, unknown>>()
+    .notNull()
+    .default(sql`'{}'::jsonb`),
   createdAt: timestamp('created_at').notNull().defaultNow(),
   updatedAt: timestamp('updated_at')
     .notNull()
@@ -163,6 +167,11 @@ export const userProfileSettings = pgTable('user_profile_settings', {
     .$type<{ label: string; url: string }[]>()
     .notNull()
     .default(sql`'[]'::jsonb`),
+  accountOnboardingAnswers: jsonb('account_onboarding_answers')
+    .$type<Record<string, unknown>>()
+    .notNull()
+    .default(sql`'{}'::jsonb`),
+  accountOnboardingCompletedAt: timestamp('account_onboarding_completed_at'),
   updatedAt: timestamp('updated_at')
     .notNull()
     .defaultNow()

@@ -98,7 +98,7 @@ export function AutofillPage({ surface }: AutofillPageProps) {
         greeting="Application forms"
         description={
           surface === "sidepanel"
-            ? "We scan the active tab automatically. Adjust selections, then apply the fills you want."
+            ? "Quickly fill application forms with your default profile."
             : "Use the side panel on a job site for the best autofill workflow."
         }
         action={() => void navigate({ to: "/dashboard" })}
@@ -114,6 +114,7 @@ export function AutofillPage({ surface }: AutofillPageProps) {
         fields={workflow.fields}
         payload={workflow.payload}
         selected={workflow.selected}
+        applyResults={workflow.applyResults}
         onToggleField={workflow.onToggleField}
         error={pageError ?? workflow.error}
         notice={workflow.notice}

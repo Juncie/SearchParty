@@ -50,7 +50,6 @@ export function DashboardAutofillSection({
         <div className="flex flex-col gap-2 @sm:flex-row @sm:flex-wrap @sm:items-center">
           <Button
             type="button"
-            size="lg"
             className="w-full cursor-pointer @sm:w-auto @sm:min-w-44"
             disabled={!canQuickApply}
             onClick={() => void onQuickApply()}
@@ -61,13 +60,11 @@ export function DashboardAutofillSection({
           <Button
             type="button"
             variant="outline"
-            size="sm"
             className="w-full cursor-pointer @sm:w-auto"
             disabled={busy || !fieldsDetected}
             onClick={() => void onPreviewMatches()}
           >
-            <ListChecks className="size-3.5" />
-            Preview matches
+            Preview Autofill
           </Button>
         </div>
 

@@ -2,6 +2,9 @@ import {
   extensionAutofillApplyMessageType,
   extensionAutofillGetScanMessageType,
   extensionAutofillScanMessageType,
+  type AutofillExecutionOptions,
+  type ExtensionAutofillApplyResponse,
+  type ExtensionAutofillFill,
   type ScannedAutofillFieldPayload,
 } from "@searchparty/shared";
 
@@ -20,23 +23,32 @@ export async function getExtensionActiveTabId(): Promise<
 }
 
 export async function scanActiveTab(
-  mode: "cached" | "refresh",
+  mode: "cached" | "refresh"
 ): Promise<ActiveTabScanResponse> {
   try {
     const tabId = await getExtensionActiveTabId();
     if (tabId === undefined) {
-      return { ok: false, error: "No active tab found in this window." };
+      return {
+        ok: false,
+        error: "No active tab found in this window.",
+      };
     }
     const messageType =
       mode === "refresh"
         ? extensionAutofillScanMessageType
         : extensionAutofillGetScanMessageType;
-    const raw: unknown = await browser.tabs.sendMessage(tabId, {
-      type: messageType,
-    });
+    const raw: unknown = await browser.tabs.sendMessage(
+      tabId,
+      {
+        type: messageType,
+      }
+    );
     const res = raw as ActiveTabScanResponse;
     if (!res || typeof res !== "object" || !("ok" in res)) {
-      return { ok: false, error: "Unexpected scan response." };
+      return {
+        ok: false,
+        error: "Unexpected scan response.",
+      };
     }
     return res;
   } catch {
@@ -49,22 +61,33 @@ export async function scanActiveTab(
 }
 
 export async function applyAutofillToActiveTab(
-  fills: { spId: string; value: string }[],
-): Promise<{ ok: true } | { ok: false; error: string }> {
+  fills: ExtensionAutofillFill[],
+  options?: AutofillExecutionOptions
+): Promise<ExtensionAutofillApplyResponse> {
   try {
     const tabId = await getExtensionActiveTabId();
     if (tabId === undefined) {
-      return { ok: false, error: "No active tab found in this window." };
+      return {
+        ok: false,
+        error: "No active tab found in this window.",
+      };
     }
-    const raw: unknown = await browser.tabs.sendMessage(tabId, {
-      type: extensionAutofillApplyMessageType,
-      fills,
-    });
-    const res = raw as { ok?: boolean; error?: string };
+    const raw: unknown = await browser.tabs.sendMessage(
+      tabId,
+      {
+        type: extensionAutofillApplyMessageType,
+        fills,
+        options,
+      }
+    );
+    const res = raw as ExtensionAutofillApplyResponse;
     if (!res?.ok) {
-      return { ok: false, error: res?.error ?? "Apply failed." };
+      return {
+        ok: false,
+        error: res?.error ?? "Apply failed.",
+      };
     }
-    return { ok: true };
+    return res;
   } catch {
     return {
       ok: false,

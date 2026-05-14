@@ -43,6 +43,13 @@
       "when": 1778200000002,
       "tag": "0005_account_address_parts",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1778200000003,
+      "tag": "0006_profile_onboarding_answers",
+      "breakpoints": true
     }
   ]
 }

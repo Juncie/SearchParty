@@ -23,6 +23,7 @@ import { useActiveTabAutofillScan } from "@/hooks/use-active-tab-autofill-scan";
 import { applyAutofillToActiveTab } from "@/lib/autofill-active-tab";
 import {
   deleteApplicantProfile,
+  getAccountSetupResponse,
   getAuthSession,
   listApplicantProfiles,
   setActiveApplicantProfile,
@@ -89,6 +90,14 @@ export function DashboardPage({
       const currentSession = await getAuthSession();
       if (!currentSession?.session) {
         void navigate({ to: "/login" });
+        return;
+      }
+
+      // Gate the dashboard on first-time onboarding so users who arrive here
+      // without completing the wizard get bounced back into it.
+      const account = await getAccountSetupResponse();
+      if (!account.accountOnboardingCompletedAt) {
+        void navigate({ to: "/profiles/new" });
         return;
       }
 

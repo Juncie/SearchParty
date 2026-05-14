@@ -1,14 +1,25 @@
 import {
-  confidenceScoreToTier,
   extensionAutofillApplyMessageType,
   extensionAutofillGetScanMessageType,
   extensionAutofillScanMessageType,
-  matchDomFieldToAutofill,
-  type DomFieldSignals,
+  matchDomFieldToAutofillDetailed,
+  type AutofillFieldKind,
+  type AutofillFillStatus,
+  type AutofillInteractionType,
+  type ExtensionAutofillApplyMessage,
   type ScannedAutofillFieldPayload,
 } from "@searchparty/shared";
 
-let cachedScanFields: ScannedAutofillFieldPayload[] | null = null;
+import {
+  currentDomainMemoryKey,
+  readDomainMemoryHint,
+  recordAcceptedAutofillMatches,
+} from "@/lib/autofill/domainMemory";
+import { executeAutofill } from "@/lib/autofill/executeAutofill";
+import { extractDomFields } from "@/lib/autofill/extractDomFields";
+
+let cachedScanFields: ScannedAutofillFieldPayload[] | null =
+  null;
 
 function clearPreviousMarkers() {
   document
@@ -18,147 +29,161 @@ function clearPreviousMarkers() {
     });
 }
 
-function controlLabelText(control: HTMLElement): string {
+function shouldExposeField(
+  field: ScannedAutofillFieldPayload
+): boolean {
+  return field.tier !== "ignore";
+}
+
+const MANUAL_VALUE_KINDS: ReadonlySet<AutofillFieldKind> =
+  new Set([
+    "resume",
+    "coverLetter",
+    "desiredSalary",
+    "workHistory",
+    "education",
+    "smsConsent",
+  ]);
+
+function fillStatusForField(
+  kind: AutofillFieldKind,
+  interactionType: AutofillInteractionType
+): {
+  fillStatus: AutofillFillStatus;
+  unsupportedReason?: string;
+} {
+  if (kind === "smsConsent") {
+    return {
+      fillStatus: "manual",
+      unsupportedReason:
+        "Consent checkboxes need an explicit user choice before SearchParty fills them.",
+    };
+  }
   if (
-    control instanceof HTMLInputElement ||
-    control instanceof HTMLTextAreaElement ||
-    control instanceof HTMLSelectElement
+    interactionType === "file" ||
+    interactionType === "button" ||
+    interactionType === "radio" ||
+    interactionType === "combobox" ||
+    interactionType === "unknown"
   ) {
-    const lbs = control.labels;
-    if (lbs && lbs.length > 0) {
-      return Array.from(lbs)
-        .map((node) => node.innerText.trim())
-        .filter(Boolean)
-        .join(" ");
+    return {
+      fillStatus: "unsupported",
+      unsupportedReason: `${interactionType} controls are detected but not automatically filled yet.`,
+    };
+  }
+  if (MANUAL_VALUE_KINDS.has(kind)) {
+    return {
+      fillStatus: "manual",
+      unsupportedReason:
+        "This field needs profile data or generated content that SearchParty does not apply yet.",
+    };
+  }
+  return { fillStatus: "fillable" };
+}
+
+function labelPreviewForField(
+  field: Pick<ScannedAutofillFieldPayload, "kind">,
+  signals: ReturnType<
+    typeof extractDomFields
+  >[number]["signals"]
+): string {
+  return (
+    signals.labelText ||
+    signals.placeholder ||
+    signals.name ||
+    signals.id ||
+    signals.nearbyText ||
+    field.kind
+  ).slice(0, 120);
+}
+
+function currentValueForControl(
+  control: ReturnType<typeof extractDomFields>[number]["control"]
+): string {
+  if (control instanceof HTMLInputElement) {
+    if (control.type === "checkbox" || control.type === "radio") {
+      return control.checked ? "checked" : "";
+    }
+    if (control.type === "file") {
+      return Array.from(control.files ?? [])
+        .map((file) => file.name)
+        .join(", ");
     }
   }
-  const aria = control.getAttribute("aria-label")?.trim() ?? "";
-  if (aria) {
-    return aria;
+  if (control instanceof HTMLButtonElement) {
+    return (control.textContent ?? "").trim();
   }
-  const labelledBy = control.getAttribute("aria-labelledby");
-  if (labelledBy) {
-    return labelledBy
-      .split(/\s+/)
-      .map(
-        (id) => document.getElementById(id)?.textContent?.trim() ?? "",
-      )
-      .filter(Boolean)
-      .join(" ");
-  }
-  return "";
+  return control.value;
 }
 
-function shouldExposeField(score: number, signals: DomFieldSignals): boolean {
-  if (score >= 45) {
-    return true;
-  }
-  if (signals.autocomplete.trim().length > 0) {
-    return true;
-  }
-  return false;
-}
-
-function scanDocumentForAutofill(): ScannedAutofillFieldPayload[] {
+async function scanDocumentForAutofill(): Promise<
+  ScannedAutofillFieldPayload[]
+> {
   clearPreviousMarkers();
-  const candidates = document.querySelectorAll("input, textarea, select");
   const fields: ScannedAutofillFieldPayload[] = [];
+  const domain = currentDomainMemoryKey();
 
-  for (const raw of candidates) {
-    if (
-      !(
-        raw instanceof HTMLInputElement ||
-        raw instanceof HTMLTextAreaElement ||
-        raw instanceof HTMLSelectElement
-      )
-    ) {
-      continue;
-    }
-    const control = raw;
+  for (const { control, signals } of extractDomFields()) {
     if (control.disabled) {
       continue;
     }
-    if (
-      control instanceof HTMLInputElement &&
-      (control.type === "hidden" ||
-        control.type === "submit" ||
-        control.type === "button" ||
-        control.type === "image" ||
-        control.type === "checkbox" ||
-        control.type === "radio" ||
-        control.type === "file" ||
-        control.type === "range" ||
-        control.type === "color")
-    ) {
-      continue;
-    }
-    if (control instanceof HTMLInputElement && control.readOnly) {
-      continue;
-    }
-
-    const style = window.getComputedStyle(control);
-    if (style.visibility === "hidden" || style.display === "none") {
-      continue;
-    }
-
-    const tagName = control.tagName.toLowerCase();
-    const type =
-      control instanceof HTMLInputElement
-        ? (control.type || "text").toLowerCase()
-        : tagName === "select"
-          ? "select-one"
-          : "textarea";
-
-    const labelText = controlLabelText(control);
-    const signals: DomFieldSignals = {
-      tagName,
-      name: control.getAttribute("name") ?? "",
-      id: control.id ?? "",
-      type,
-      placeholder: control.getAttribute("placeholder") ?? "",
-      ariaLabel: control.getAttribute("aria-label") ?? "",
-      autocomplete: control.getAttribute("autocomplete") ?? "",
-      labelText,
+    const memoryHint = await readDomainMemoryHint(
+      domain,
+      signals.cssPath
+    );
+    const result = matchDomFieldToAutofillDetailed(
+      signals,
+      memoryHint
+    );
+    const spId = globalThis.crypto.randomUUID();
+    const interactionType = signals.interactionType ?? "unknown";
+    const fillSupport = fillStatusForField(
+      result.kind,
+      interactionType
+    );
+    const field: ScannedAutofillFieldPayload = {
+      spId,
+      kind: result.kind,
+      score: result.score,
+      tier:
+        result.kind === "smsConsent" && result.tier === "auto"
+          ? "confirm"
+          : result.tier,
+      labelPreview: labelPreviewForField(result, signals),
+      currentValue: currentValueForControl(control),
+      tagName: signals.tagName,
+      interactionType,
+      ...fillSupport,
+      cssPath: signals.cssPath,
+      options: signals.options,
+      reasons: result.reasons,
+      penalties: result.penalties,
     };
 
-    const { kind, score } = matchDomFieldToAutofill(signals);
-    if (!shouldExposeField(score, signals)) {
+    if (!shouldExposeField(field)) {
       continue;
     }
 
-    const spId = globalThis.crypto.randomUUID();
-    control.setAttribute("data-searchparty-autofill-id", spId);
-    const tier = confidenceScoreToTier(score);
-    const labelPreview =
-      labelText ||
-      signals.placeholder ||
-      signals.name ||
-      signals.id ||
-      kind;
-
-    fields.push({
-      spId,
-      kind,
-      score,
-      tier,
-      labelPreview: labelPreview.slice(0, 120),
-      currentValue:
-        control instanceof HTMLSelectElement
-          ? control.value
-          : control.value,
-      tagName,
-    });
+    control.setAttribute(
+      "data-searchparty-autofill-id",
+      spId
+    );
+    fields.push(field);
   }
 
   return fields;
 }
 
-function refreshAutofillScanCache(): ScannedAutofillFieldPayload[] {
-  cachedScanFields = scanDocumentForAutofill();
+async function refreshAutofillScanCache(): Promise<
+  ScannedAutofillFieldPayload[]
+> {
+  cachedScanFields = await scanDocumentForAutofill();
   return cachedScanFields;
 }
 
-function getOrCreateAutofillScanCache(): ScannedAutofillFieldPayload[] {
+async function getOrCreateAutofillScanCache(): Promise<
+  ScannedAutofillFieldPayload[]
+> {
   if (cachedScanFields !== null) {
     return cachedScanFields;
   }
@@ -167,11 +192,9 @@ function getOrCreateAutofillScanCache(): ScannedAutofillFieldPayload[] {
 
 function scheduleInitialAutofillScan() {
   const run = () => {
-    try {
-      void refreshAutofillScanCache();
-    } catch {
-      /* ignore — panel can trigger an explicit scan */
-    }
+    void refreshAutofillScanCache().catch(() => {
+      /* ignore - panel can trigger an explicit scan */
+    });
   };
   if (document.readyState !== "loading") {
     queueMicrotask(run);
@@ -182,42 +205,26 @@ function scheduleInitialAutofillScan() {
     () => {
       queueMicrotask(run);
     },
-    { once: true },
+    { once: true }
   );
 }
 
-function applyAutofillFills(fills: { spId: string; value: string }[]) {
-  for (const { spId, value } of fills) {
-    const safeId =
-      typeof CSS !== "undefined" && "escape" in CSS
-        ? CSS.escape(spId)
-        : spId.replace(/["\\]/g, "");
-    const el = document.querySelector(
-      `[data-searchparty-autofill-id="${safeId}"]`,
-    );
-    if (!el) {
-      continue;
-    }
-    if (
-      !(
-        el instanceof HTMLInputElement ||
-        el instanceof HTMLTextAreaElement ||
-        el instanceof HTMLSelectElement
-      )
-    ) {
-      continue;
-    }
-    if (el instanceof HTMLSelectElement) {
-      el.value = value;
-      el.dispatchEvent(new Event("input", { bubbles: true }));
-      el.dispatchEvent(new Event("change", { bubbles: true }));
-      continue;
-    }
-    el.focus();
-    el.value = value;
-    el.dispatchEvent(new Event("input", { bubbles: true }));
-    el.dispatchEvent(new Event("change", { bubbles: true }));
+async function recordAppliedFields(
+  appliedSpIds: string[]
+): Promise<void> {
+  if (!cachedScanFields || appliedSpIds.length === 0) {
+    return;
   }
+  const applied = new Set(appliedSpIds);
+  await recordAcceptedAutofillMatches(
+    currentDomainMemoryKey(),
+    cachedScanFields
+      .filter((field) => applied.has(field.spId))
+      .map((field) => ({
+        fieldSelector: field.cssPath,
+        kind: field.kind,
+      }))
+  );
 }
 
 export default defineContentScript({
@@ -225,50 +232,82 @@ export default defineContentScript({
   main() {
     scheduleInitialAutofillScan();
 
-    browser.runtime.onMessage.addListener((message, _sender, sendResponse) => {
-      if (!message || typeof message !== "object" || !("type" in message)) {
+    browser.runtime.onMessage.addListener(
+      (message, _sender, sendResponse) => {
+        if (
+          !message ||
+          typeof message !== "object" ||
+          !("type" in message)
+        ) {
+          return undefined;
+        }
+
+        if (
+          message.type ===
+          extensionAutofillGetScanMessageType
+        ) {
+          void getOrCreateAutofillScanCache()
+            .then((fields) =>
+              sendResponse({ ok: true, fields })
+            )
+            .catch((error: unknown) => {
+              const msg =
+                error instanceof Error
+                  ? error.message
+                  : "Scan failed.";
+              sendResponse({ ok: false, error: msg });
+            });
+          return true;
+        }
+
+        if (
+          message.type === extensionAutofillScanMessageType
+        ) {
+          void refreshAutofillScanCache()
+            .then((fields) =>
+              sendResponse({ ok: true, fields })
+            )
+            .catch((error: unknown) => {
+              const msg =
+                error instanceof Error
+                  ? error.message
+                  : "Scan failed.";
+              sendResponse({ ok: false, error: msg });
+            });
+          return true;
+        }
+
+        if (
+          message.type ===
+          extensionAutofillApplyMessageType &&
+          "fills" in message &&
+          Array.isArray(message.fills)
+        ) {
+          try {
+            const applyMessage =
+              message as ExtensionAutofillApplyMessage;
+            const { appliedSpIds, results } = executeAutofill(
+              applyMessage.fills,
+              applyMessage.options
+            );
+            void recordAppliedFields(appliedSpIds).catch(
+              () => {
+                /* memory is helpful, but filling should not fail if storage does */
+              }
+            );
+            sendResponse({ ok: true, appliedSpIds, results });
+          } catch (error) {
+            const msg =
+              error instanceof Error
+                ? error.message
+                : "Apply failed.";
+            sendResponse({ ok: false, error: msg });
+          }
+          return true;
+        }
+
         return undefined;
       }
-      if (message.type === extensionAutofillGetScanMessageType) {
-        try {
-          const fields = getOrCreateAutofillScanCache();
-          sendResponse({ ok: true, fields });
-        } catch (error) {
-          const msg =
-            error instanceof Error ? error.message : "Scan failed.";
-          sendResponse({ ok: false, error: msg });
-        }
-        return true;
-      }
-      if (message.type === extensionAutofillScanMessageType) {
-        try {
-          const fields = refreshAutofillScanCache();
-          sendResponse({ ok: true, fields });
-        } catch (error) {
-          const msg =
-            error instanceof Error ? error.message : "Scan failed.";
-          sendResponse({ ok: false, error: msg });
-        }
-        return true;
-      }
-      if (
-        message.type === extensionAutofillApplyMessageType &&
-        "fills" in message &&
-        Array.isArray(message.fills)
-      ) {
-        try {
-          applyAutofillFills(
-            message.fills as { spId: string; value: string }[],
-          );
-          sendResponse({ ok: true });
-        } catch (error) {
-          const msg =
-            error instanceof Error ? error.message : "Apply failed.";
-          sendResponse({ ok: false, error: msg });
-        }
-        return true;
-      }
-      return undefined;
-    });
+    );
   },
 });

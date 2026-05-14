@@ -41,7 +41,7 @@ export function ProfileSettingsSection({
       <Button
         variant="secondary"
         type="button"
-        onClick={onEditAccount}
+        onClick={onSignOut}
         disabled={status !== "idle"}
       >
         Logout

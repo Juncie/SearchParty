@@ -279,6 +279,7 @@ export function ProfileEditPage({
           fields={autofillWorkflow.fields}
           payload={autofillWorkflow.payload}
           selected={autofillWorkflow.selected}
+          applyResults={autofillWorkflow.applyResults}
           onToggleField={autofillWorkflow.onToggleField}
           error={autofillWorkflow.error}
           notice={autofillWorkflow.notice}
@@ -310,7 +311,6 @@ export function ProfileEditPage({
         profileId={profileId}
         activeProfileId={activeProfileId}
         statusIdle={statusIdle}
-        onActivate={activateProfile}
         onDelete={deleteProfile}
         deleting={status === "deleting"}
       />

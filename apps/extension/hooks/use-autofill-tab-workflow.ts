@@ -9,6 +9,7 @@ import type { ApplicantProfile } from "@searchparty/shared";
 import {
   buildAutofillPayloadValues,
   valueForAutofillKind,
+  type AutofillFieldExecutionResult,
   type ScannedAutofillFieldPayload,
 } from "@searchparty/shared";
 import { defaultSelectedForTier } from "@/components/autofill/autofill-display";
@@ -35,6 +36,9 @@ export function useAutofillTabWorkflow(
     useState<WorkflowStatus>("idle");
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
+  const [applyResults, setApplyResults] = useState<
+    Record<string, AutofillFieldExecutionResult>
+  >({});
 
   const payload = useMemo(() => {
     if (!session?.user || !profile) {
@@ -53,6 +57,7 @@ export function useAutofillTabWorkflow(
     async (mode: "cached" | "refresh") => {
       setNotice(null);
       setError(null);
+      setApplyResults({});
       setStatus("scanning");
       const res = await scanActiveTab(mode);
       if (!res.ok) {
@@ -67,6 +72,7 @@ export function useAutofillTabWorkflow(
         Object.fromEntries(
           res.fields.map((f) => [
             f.spId,
+            f.fillStatus === "fillable" &&
             defaultSelectedForTier(f.tier),
           ]),
         ),
@@ -96,9 +102,13 @@ export function useAutofillTabWorkflow(
     }
     setNotice(null);
     setError(null);
+    setApplyResults({});
     setStatus("applying");
     const fills = fields
-      .filter((f) => selected[f.spId])
+      .filter(
+        (f) =>
+          selected[f.spId] && f.fillStatus === "fillable",
+      )
       .map((f) => ({
         spId: f.spId,
         value: valueForAutofillKind(payload, f.kind),
@@ -117,8 +127,18 @@ export function useAutofillTabWorkflow(
       setStatus("idle");
       return;
     }
+    setApplyResults(
+      Object.fromEntries(
+        res.results.map((result) => [result.spId, result]),
+      ),
+    );
+    const failedCount = res.results.filter(
+      (result) => !result.ok,
+    ).length;
     setNotice(
-      `Applied ${fills.length} field${fills.length === 1 ? "" : "s"}.`,
+      failedCount > 0
+        ? `Applied ${res.appliedSpIds.length} field${res.appliedSpIds.length === 1 ? "" : "s"}; ${failedCount} need review.`
+        : `Applied ${res.appliedSpIds.length} field${res.appliedSpIds.length === 1 ? "" : "s"}.`,
     );
     setStatus("idle");
   }, [fields, payload, selected]);
@@ -141,6 +161,7 @@ export function useAutofillTabWorkflow(
     onToggleField,
     runScan,
     apply,
+    applyResults,
     payload,
     status,
     error,

@@ -27,6 +27,7 @@ export const emptyProfileDraft: ProfileDraft = {
   linkedinUrl: "",
   githubUrl: "",
   portfolioUrl: "",
+  onboardingAnswers: {},
   workExperiences: [],
   skills: [],
   projects: [],
@@ -597,6 +598,7 @@ export function profileToDraft(
     linkedinUrl: profile.linkedinUrl,
     githubUrl: profile.githubUrl,
     portfolioUrl: profile.portfolioUrl,
+    onboardingAnswers: profile.onboardingAnswers ?? {},
     workExperiences: profile.workExperiences.map(
       ({
         company,

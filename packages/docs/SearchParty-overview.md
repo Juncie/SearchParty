@@ -95,18 +95,28 @@ The MVP WILL NOT:
 
 # Tech Stack
 
-# Monorepo
+Private **pnpm + Turbo** monorepo. Authoritative layout and runtime boundaries are
+described in `packages/docs/architecture.md`.
 
 ```txt
-/apps
-  /web
-  /extension
+apps/
+  web/           TanStack Start + Vite (full-stack web)
+  extension/     WXT MV3 extension (popup, side panel, autofill content scripts)
 
-/packages
-  /shared
-  /db
-  /ai
-  /docs
-  /ui
-  /utils
+packages/
+  shared/        Cross-app contracts; applicant profiles; autofill engine (Fuse.js)
+  db/            Drizzle + PostgreSQL (server-side only)
+  ui/            Shared design tokens / `theme.css`
+  docs/          Architecture and planning docs (this folder)
+  data/          Markdown catalogs (reference material; not a publishable workspace package)
 ```
+
+**Form intelligence direction:** evolve autofill from simple keyword fills toward a
+reliable, explainable **form interaction engine**—see `plans/architecture-plan.md`
+and `plans/stack-upgrade.md` for phased goals (classification depth, verification,
+optional Playwright-based **test** automation). Runtime extension code uses DOM APIs;
+**Fuse.js** powers fuzzy matching in `@searchparty/shared`.
+
+Planned or not yet present as packages: dedicated `packages/ai`,
+`packages/documents`, or `packages/utils` trees (some goals appear in
+`SearchParty-execution.md` as forward-looking product phases).

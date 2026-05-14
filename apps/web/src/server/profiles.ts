@@ -1,5 +1,7 @@
 import { and, desc, eq, inArray } from 'drizzle-orm'
 import {
+  accountOnboardingInputSchema,
+  accountSetupResponseSchema,
   accountSetupSchema,
   activeApplicantProfileInputSchema,
   applicantProfileInputSchema,
@@ -52,6 +54,7 @@ async function readProfilesForUser(userId: string): Promise<ApplicantProfile[]> 
   return profiles.map((profile) =>
     applicantProfileSchema.parse({
       ...profile,
+      onboardingAnswers: profile.onboardingAnswers,
       preferredTone: applicantProfileToneSchema.parse(profile.preferredTone),
       createdAt: toIsoDate(profile.createdAt),
       updatedAt: toIsoDate(profile.updatedAt),
@@ -142,6 +145,7 @@ export async function createApplicantProfile(userId: string, rawInput: unknown) 
       linkedinUrl: input.linkedinUrl,
       githubUrl: input.githubUrl,
       portfolioUrl: input.portfolioUrl,
+      onboardingAnswers: input.onboardingAnswers,
     })
 
     await replaceNestedProfileData(tx, profileId, input)
@@ -190,6 +194,9 @@ export async function updateApplicantProfile(
     if (input.linkedinUrl !== undefined) profileUpdates.linkedinUrl = input.linkedinUrl
     if (input.githubUrl !== undefined) profileUpdates.githubUrl = input.githubUrl
     if (input.portfolioUrl !== undefined) profileUpdates.portfolioUrl = input.portfolioUrl
+    if (input.onboardingAnswers !== undefined) {
+      profileUpdates.onboardingAnswers = input.onboardingAnswers
+    }
 
     if (Object.keys(profileUpdates).length > 0) {
       await tx
@@ -266,7 +273,7 @@ export async function readAccountSetup(userId: string) {
     .limit(1)
 
   if (settings.length === 0) {
-    return {
+    return accountSetupResponseSchema.parse({
       firstName: '',
       lastName: '',
       phone: '',
@@ -276,11 +283,13 @@ export async function readAccountSetup(userId: string) {
       addressZip: '',
       addressUnit: '',
       urls: [],
-    }
+      accountOnboardingCompletedAt: null,
+      accountOnboardingAnswers: {},
+    })
   }
 
   const row = settings[0]
-  return {
+  return accountSetupResponseSchema.parse({
     firstName: row.firstName,
     lastName: row.lastName,
     phone: row.phone,
@@ -290,7 +299,11 @@ export async function readAccountSetup(userId: string) {
     addressZip: row.addressZip,
     addressUnit: row.addressUnit,
     urls: row.urls,
-  }
+    accountOnboardingCompletedAt: row.accountOnboardingCompletedAt
+      ? toIsoDate(row.accountOnboardingCompletedAt)
+      : null,
+    accountOnboardingAnswers: row.accountOnboardingAnswers,
+  })
 }
 
 export async function updateAccountSetup(userId: string, rawInput: unknown) {
@@ -323,6 +336,43 @@ export async function updateAccountSetup(userId: string, rawInput: unknown) {
         addressUnit: input.addressUnit,
         urls: input.urls,
         updatedAt: new Date(),
+      },
+    })
+
+  return readAccountSetup(userId)
+}
+
+/**
+ * Persists account-level onboarding answers and marks eligibility complete (one-time per user).
+ */
+export async function markAccountOnboardingComplete(userId: string, rawInput: unknown) {
+  const { answers } = accountOnboardingInputSchema.parse(rawInput)
+
+  const existing = await db
+    .select()
+    .from(userProfileSettings)
+    .where(eq(userProfileSettings.userId, userId))
+    .limit(1)
+
+  const mergedAnswers = {
+    ...(existing[0]?.accountOnboardingAnswers ?? {}),
+    ...answers,
+  }
+  const now = new Date()
+
+  await db
+    .insert(userProfileSettings)
+    .values({
+      userId,
+      accountOnboardingAnswers: mergedAnswers,
+      accountOnboardingCompletedAt: now,
+    })
+    .onConflictDoUpdate({
+      target: userProfileSettings.userId,
+      set: {
+        accountOnboardingAnswers: mergedAnswers,
+        accountOnboardingCompletedAt: now,
+        updatedAt: now,
       },
     })
 

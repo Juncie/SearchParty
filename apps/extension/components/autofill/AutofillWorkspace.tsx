@@ -1,5 +1,6 @@
 import type {
   ApplicantProfile,
+  AutofillFieldExecutionResult,
   AutofillPayloadValues,
   ScannedAutofillFieldPayload,
 } from "@searchparty/shared";
@@ -23,6 +24,7 @@ interface AutofillWorkspaceProps {
   fields: ScannedAutofillFieldPayload[];
   payload: AutofillPayloadValues | null;
   selected: Record<string, boolean>;
+  applyResults: Record<string, AutofillFieldExecutionResult>;
   onToggleField: (spId: string, checked: boolean) => void;
   error: string | null;
   notice: string | null;
@@ -47,6 +49,7 @@ export function AutofillWorkspace({
   fields,
   payload,
   selected,
+  applyResults,
   onToggleField,
   error,
   notice,
@@ -166,6 +169,7 @@ export function AutofillWorkspace({
           fields={fields}
           payload={payload}
           selected={selected}
+          applyResults={applyResults}
           onToggleField={onToggleField}
         />
       ) : null}

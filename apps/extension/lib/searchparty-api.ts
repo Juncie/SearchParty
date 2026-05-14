@@ -1,11 +1,15 @@
 import {
   SEARCHPARTY_APP,
+  accountOnboardingInputSchema,
+  accountSetupResponseSchema,
+  accountSetupSchema,
   applicantProfileSchema,
   applicantProfilesResponseSchema,
   currentUserResponseSchema,
   healthResponseSchema,
-  accountSetupSchema,
+  type AccountOnboardingInput,
   type AccountSetup,
+  type AccountSetupResponse,
   type ApplicantProfileInput,
   type ApplicantProfileUpdate,
   type ApplicantProfilesResponse,
@@ -177,6 +181,15 @@ export async function getAccountSetup(): Promise<AccountSetup> {
   return accountSetupSchema.parse(data);
 }
 
+/**
+ * Fetches `/api/account` and validates with the extended schema that includes
+ * `accountOnboardingCompletedAt` so the wizard can skip eligibility on return visits.
+ */
+export async function getAccountSetupResponse(): Promise<AccountSetupResponse> {
+  const data = await callSearchPartyEndpoint("/api/account", { method: "GET" });
+  return accountSetupResponseSchema.parse(data);
+}
+
 export async function updateAccountSetup(
   setup: AccountSetup
 ): Promise<AccountSetup> {
@@ -185,6 +198,20 @@ export async function updateAccountSetup(
     body: JSON.stringify(setup),
   });
   return accountSetupSchema.parse(data);
+}
+
+/**
+ * Persists account-level onboarding answers and marks eligibility complete.
+ */
+export async function markAccountOnboardingComplete(
+  input: AccountOnboardingInput
+): Promise<AccountSetupResponse> {
+  const payload = accountOnboardingInputSchema.parse(input);
+  const data = await callSearchPartyEndpoint("/api/account/onboarding", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+  return accountSetupResponseSchema.parse(data);
 }
 
 export async function getAuthSession() {

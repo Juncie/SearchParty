@@ -66,6 +66,24 @@ const optionalUrl = z
   .optional()
   .default("");
 
+/** Arbitrary onboarding answers keyed by profile-question field id (JSON-safe). */
+export const profileOnboardingAnswersSchema = z.record(
+  z.string(),
+  z.unknown(),
+);
+
+export type ProfileOnboardingAnswers = z.infer<
+  typeof profileOnboardingAnswersSchema
+>;
+
+export const accountOnboardingInputSchema = z.object({
+  answers: profileOnboardingAnswersSchema,
+});
+
+export type AccountOnboardingInput = z.infer<
+  typeof accountOnboardingInputSchema
+>;
+
 export const applicantProfileInputSchema = z.object({
   name: z.string().trim().min(1, "Profile name is required"),
   targetRole: z.string().trim().min(1, "Target role is required"),
@@ -78,6 +96,7 @@ export const applicantProfileInputSchema = z.object({
   linkedinUrl: optionalUrl,
   githubUrl: optionalUrl,
   portfolioUrl: optionalUrl,
+  onboardingAnswers: profileOnboardingAnswersSchema.default({}),
   workExperiences: z.array(workExperienceInputSchema).default([]),
   skills: z.array(profileSkillInputSchema).default([]),
   projects: z.array(profileProjectInputSchema).default([]),
@@ -123,6 +142,7 @@ export const applicantProfileSchema = z.object({
   linkedinUrl: z.string(),
   githubUrl: z.string(),
   portfolioUrl: z.string(),
+  onboardingAnswers: profileOnboardingAnswersSchema,
   createdAt: z.string().datetime(),
   updatedAt: z.string().datetime(),
   workExperiences: z.array(workExperienceSchema),
@@ -191,4 +211,12 @@ export const accountSetupSchema = z.object({
 
 export type AccountSetup = z.infer<typeof accountSetupSchema>;
 
-export * from "./autofill";
+/** Server GET `/api/account` — editable fields plus one-time onboarding state. */
+export const accountSetupResponseSchema = accountSetupSchema.extend({
+  accountOnboardingCompletedAt: z.string().datetime().nullable(),
+  accountOnboardingAnswers: profileOnboardingAnswersSchema,
+});
+
+export type AccountSetupResponse = z.infer<typeof accountSetupResponseSchema>;
+
+export * from "./autofill/index";

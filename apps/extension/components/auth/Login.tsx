@@ -66,7 +66,9 @@ export function Login({
       className="w-full max-w-sm border-border/80 bg-card/95"
     >
       <CardHeader>
-        <CardTitle>Login</CardTitle>
+        <CardTitle>
+          <h2>Login</h2>
+        </CardTitle>
         <CardDescription>
           Use your SearchParty account credentials.
         </CardDescription>
@@ -74,14 +76,17 @@ export function Login({
 
       <CardContent>
         <form
-          className={cn("grid", isCompact ? "gap-2" : "gap-3")}
+          className={cn(
+            "grid",
+            isCompact ? "gap-2" : "gap-3"
+          )}
           onSubmit={handleSubmit}
           noValidate
         >
           <div
             className={cn(
               "grid",
-              isCompact ? "gap-1" : "gap-1.5",
+              isCompact ? "gap-1" : "gap-1.5"
             )}
           >
             <label
@@ -107,7 +112,7 @@ export function Login({
           <div
             className={cn(
               "grid",
-              isCompact ? "gap-1" : "gap-1.5",
+              isCompact ? "gap-1" : "gap-1.5"
             )}
           >
             <label
