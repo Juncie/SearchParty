@@ -50,6 +50,13 @@
       "when": 1778200000003,
       "tag": "0006_profile_onboarding_answers",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1778200000004,
+      "tag": "0007_resumes",
+      "breakpoints": true
     }
   ]
 }

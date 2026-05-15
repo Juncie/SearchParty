@@ -16,9 +16,8 @@ export async function getAuthenticatedSession(request: Request) {
   return session
 }
 
-export function unauthorizedResponse() {
-  return Response.json(
-    { message: 'You must be signed in to manage applicant profiles.' },
-    { status: 401 },
-  )
+export function unauthorizedResponse(
+  message = 'You must be signed in to manage applicant profiles.',
+) {
+  return Response.json({ message }, { status: 401 })
 }

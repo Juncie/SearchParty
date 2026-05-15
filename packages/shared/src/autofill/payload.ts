@@ -30,6 +30,8 @@ export function splitDisplayName(displayName: string): {
 export function buildAutofillPayloadValues(input: {
   user: { name: string; email: string };
   profile: AutofillProfileSlice | null;
+  /** When the user has a stored resume, sets the `resume` slot label for previews. */
+  resumeAttachment?: { label: string };
 }): AutofillPayloadValues {
   const fromName = splitDisplayName(input.user.name);
   const p = input.profile;
@@ -69,7 +71,7 @@ export function buildAutofillPayloadValues(input: {
     linkedin,
     github,
     portfolio,
-    resume: "",
+    resume: input.resumeAttachment?.label.trim() ?? "",
     coverLetter: "",
     desiredSalary: "",
     workHistory: "",

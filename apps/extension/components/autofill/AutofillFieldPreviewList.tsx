@@ -107,6 +107,12 @@ function AutofillFieldPreviewRow({
   const empty = value.trim().length === 0;
   const result = applyResults[field.spId];
   const disabled = field.fillStatus !== "fillable" || empty;
+  const emptyValueHint =
+    field.kind === "resume" && field.interactionType === "file"
+      ? "No server-ready résumé on your account. File autofill uses SearchParty-stored uploads (not the profile wizard file metadata alone)."
+      : field.kind === "resume"
+        ? "No résumé value in the autofill payload for this field."
+        : "No value in profile for this field.";
   const statusText = result
     ? result.ok
       ? "Verified"
@@ -116,7 +122,7 @@ function AutofillFieldPreviewRow({
       : field.fillStatus === "unsupported"
         ? (field.unsupportedReason ?? "Unsupported")
         : empty
-          ? "No value in profile for this field."
+          ? emptyValueHint
           : `${field.interactionType} fill ready`;
 
   const applyFailed = Boolean(result && !result.ok);

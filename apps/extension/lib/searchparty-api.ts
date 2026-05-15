@@ -7,6 +7,12 @@ import {
   applicantProfilesResponseSchema,
   currentUserResponseSchema,
   healthResponseSchema,
+  RESUME_UPLOAD_MAX_BYTES,
+  resumeDownloadResponseSchema,
+  resumeListResponseSchema,
+  resumeAutofillFileName,
+  inferResumeUploadMimeTypeForWizard,
+  uploadResumeWithPresignedFlow,
   type AccountOnboardingInput,
   type AccountSetup,
   type AccountSetupResponse,
@@ -341,4 +347,107 @@ export async function deleteCurrentUserAccount() {
   return callSearchPartyEndpoint<void>("/api/user/me", {
     method: "DELETE",
   });
+}
+
+/** Lists resume rows for the signed-in user (includes pending uploads). */
+export async function listUploadedResumes() {
+  return resumeListResponseSchema.parse(
+    await callSearchPartyEndpoint<unknown>("/api/resumes/"),
+  );
+}
+
+/**
+ * Returns a short-lived presigned GET URL for file-input autofill. The content
+ * script fetches the bytes (see {@link RESUME_AUTOFILL_MAX_BYTES} enforcement there).
+ */
+export async function fetchResumeDownloadPayloadForAutofill(
+  resumeId: string,
+  mimeType: string,
+): Promise<{ downloadUrl: string; fileName: string }> {
+  const { downloadUrl } = resumeDownloadResponseSchema.parse(
+    await callSearchPartyEndpoint<unknown>(`/api/resumes/${resumeId}`),
+  );
+
+  return {
+    downloadUrl,
+    fileName: resumeAutofillFileName(mimeType),
+  };
+}
+
+/** Stored in wizard answers after a successful résumé presign + finalize flow. */
+export type WizardResumeUploadAnswer = {
+  fileName: string;
+  fileSize: number;
+  mimeType: string;
+  resumeId: string;
+  uploadStatus: "ready";
+};
+
+/**
+ * Uploads a wizard-selected résumé through SearchParty presigned storage so the
+ * account has a `ready` row for file autofill.
+ */
+export async function uploadResumeFromWizardFile(
+  file: File,
+): Promise<WizardResumeUploadAnswer> {
+  const mimeType = inferResumeUploadMimeTypeForWizard({
+    name: file.name,
+    mimeTypeFromBrowser: file.type,
+  });
+  if (!mimeType) {
+    throw new Error(
+      "Only PDF, .doc, and .docx files are supported for résumé upload.",
+    );
+  }
+  if (file.size > RESUME_UPLOAD_MAX_BYTES) {
+    throw new Error(
+      `Résumé must be ${String(Math.floor(RESUME_UPLOAD_MAX_BYTES / (1024 * 1024)))}MB or smaller.`,
+    );
+  }
+
+  const record = await uploadResumeWithPresignedFlow({
+    blob: file,
+    sizeBytes: file.size,
+    fileName: file.name,
+    mimeType,
+    kind: "resume",
+    http: {
+      requestPresign: async (body) =>
+        callSearchPartyEndpoint<unknown>("/api/resumes/", {
+          method: "POST",
+          body: JSON.stringify(body),
+        }),
+      putStorage: async ({ url, method, headers, body }) => {
+        const h = new Headers();
+        for (const [key, value] of Object.entries(headers)) {
+          h.set(key, value);
+        }
+        const res = await fetch(url, {
+          method,
+          headers: h,
+          body,
+          mode: "cors",
+          credentials: "omit",
+        });
+        if (!res.ok) {
+          throw new Error(
+            `Could not upload file to storage (${String(res.status)}). Try again.`,
+          );
+        }
+      },
+      requestFinalize: async (resumeId) =>
+        callSearchPartyEndpoint<unknown>(`/api/resumes/${resumeId}`, {
+          method: "PATCH",
+          body: JSON.stringify({ finalizeUpload: true }),
+        }),
+    },
+  });
+
+  return {
+    fileName: file.name,
+    fileSize: file.size,
+    mimeType,
+    resumeId: record.id,
+    uploadStatus: "ready",
+  };
 }

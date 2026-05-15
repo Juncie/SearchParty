@@ -3,6 +3,7 @@ import type {
   ApplicantProfileInput,
   ApplicantProfileTone,
 } from "@searchparty/shared";
+import { formatPhoneNumberMask } from "@searchparty/utils";
 import type { Dispatch, SetStateAction } from "react";
 
 import { Button } from "@/components/ui/button";
@@ -155,11 +156,12 @@ export function ProfileEditor({
         <label className="grid gap-1 text-xs font-semibold">
           Phone
           <Input
+            type="tel"
             value={draft.phone}
             onChange={(event) =>
               setDraft((current) => ({
                 ...current,
-                phone: event.target.value,
+                phone: formatPhoneNumberMask(event.target.value),
               }))
             }
             placeholder="+1 …"

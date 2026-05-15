@@ -4,12 +4,19 @@ import { Skeleton } from "@/components/ui/skeleton";
 import type { AuthSession } from "@/lib/searchparty-api";
 import type { ScannedAutofillFieldPayload } from "@searchparty/shared";
 import { Plus } from "lucide-react";
+import { useEffect, useState } from "react";
 
 interface DashboardProfilesSectionProps {
   profiles: ApplicantProfile[];
   session: AuthSession | null;
   activeProfileId: string | null;
   scanFields: ScannedAutofillFieldPayload[];
+  /** First ready resume from the web app, when available for file autofill. */
+  defaultResume: {
+    id: string;
+    label: string;
+    mimeType: string;
+  } | null;
   isLoading: boolean;
   error: string | null;
   applyBusy: boolean;
@@ -27,6 +34,7 @@ export function DashboardProfilesSection({
   session,
   activeProfileId,
   scanFields,
+  defaultResume,
   isLoading,
   error,
   applyBusy,
@@ -36,6 +44,19 @@ export function DashboardProfilesSection({
   onSetDefaultProfile,
   onDeleteProfile,
 }: DashboardProfilesSectionProps) {
+  const [openActionsProfileId, setOpenActionsProfileId] = useState<
+    string | null
+  >(null);
+
+  useEffect(() => {
+    if (
+      openActionsProfileId &&
+      !profiles.some((p) => p.id === openActionsProfileId)
+    ) {
+      setOpenActionsProfileId(null);
+    }
+  }, [profiles, openActionsProfileId]);
+
   return (
     <section className="status-card">
       <div className="flex items-start justify-between gap-3">
@@ -67,6 +88,11 @@ export function DashboardProfilesSection({
             session={session}
             isDefault={profile.id === activeProfileId}
             scanFields={scanFields}
+            defaultResume={defaultResume}
+            actionsMenuOpen={openActionsProfileId === profile.id}
+            onActionsMenuOpenChange={(open) => {
+              setOpenActionsProfileId(open ? profile.id : null);
+            }}
             onEdit={() => void onEditProfile(profile.id)}
             onApply={() => void onApplyProfile(profile)}
             applyBusy={applyBusy}

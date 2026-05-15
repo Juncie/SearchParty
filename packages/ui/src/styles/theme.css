@@ -170,7 +170,12 @@
   --popover-foreground: oklch(0.987 0.002 197.1);
   --primary: oklch(0.437 0.078 188.216);
   --primary-foreground: oklch(0.984 0.014 180.72);
-  --secondary: oklch(0.274 0.006 286.033);
+  /* Lifted from --card so filled secondary controls read as actions on card surfaces */
+  --secondary: color-mix(
+    in oklab,
+    var(--foreground) 14%,
+    var(--card) 86%
+  );
   --secondary-foreground: oklch(0.985 0 0);
   --muted: oklch(0.275 0.011 216.9);
   --muted-foreground: oklch(0.723 0.014 214.4);
@@ -219,15 +224,12 @@
   --button-primary: var(--lagoon);
   --button-primary-hover: var(--lagoon-deep);
   --button-primary-foreground: oklch(0.148 0.004 228.8);
-  --button-secondary: color-mix(
-    in oklab,
-    var(--surface-strong) 88%,
-    black 12%
-  );
+  /* Match semantic secondary so Button secondary stays aligned with bg-secondary */
+  --button-secondary: var(--secondary);
   --button-secondary-hover: color-mix(
     in oklab,
-    var(--surface-strong) 76%,
-    black 24%
+    var(--foreground) 20%,
+    var(--card) 80%
   );
   --button-secondary-foreground: var(--sea-ink);
   --button-outline-hover: color-mix(

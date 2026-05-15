@@ -13,10 +13,12 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as ProfileNewRouteImport } from './routes/profile.new'
 import { Route as ApiTodosRouteImport } from './routes/api/todos'
 import { Route as ApiAccountRouteImport } from './routes/api/account'
+import { Route as ApiResumesIndexRouteImport } from './routes/api/resumes/index'
 import { Route as ApiProfilesIndexRouteImport } from './routes/api/profiles/index'
 import { Route as ApiHealthIndexRouteImport } from './routes/api/health/index'
 import { Route as ApiUserMeRouteImport } from './routes/api/user/me'
 import { Route as ApiTrpcSplatRouteImport } from './routes/api.trpc.$'
+import { Route as ApiResumesResumeIdRouteImport } from './routes/api/resumes/$resumeId'
 import { Route as ApiProfilesActiveRouteImport } from './routes/api/profiles/active'
 import { Route as ApiProfilesProfileIdRouteImport } from './routes/api/profiles/$profileId'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
@@ -42,6 +44,11 @@ const ApiAccountRoute = ApiAccountRouteImport.update({
   path: '/api/account',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiResumesIndexRoute = ApiResumesIndexRouteImport.update({
+  id: '/api/resumes/',
+  path: '/api/resumes/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiProfilesIndexRoute = ApiProfilesIndexRouteImport.update({
   id: '/api/profiles/',
   path: '/api/profiles/',
@@ -60,6 +67,11 @@ const ApiUserMeRoute = ApiUserMeRouteImport.update({
 const ApiTrpcSplatRoute = ApiTrpcSplatRouteImport.update({
   id: '/api/trpc/$',
   path: '/api/trpc/$',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiResumesResumeIdRoute = ApiResumesResumeIdRouteImport.update({
+  id: '/api/resumes/$resumeId',
+  path: '/api/resumes/$resumeId',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiProfilesActiveRoute = ApiProfilesActiveRouteImport.update({
@@ -92,10 +104,12 @@ export interface FileRoutesByFullPath {
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/profiles/$profileId': typeof ApiProfilesProfileIdRoute
   '/api/profiles/active': typeof ApiProfilesActiveRoute
+  '/api/resumes/$resumeId': typeof ApiResumesResumeIdRoute
   '/api/trpc/$': typeof ApiTrpcSplatRoute
   '/api/user/me': typeof ApiUserMeRoute
   '/api/health/': typeof ApiHealthIndexRoute
   '/api/profiles/': typeof ApiProfilesIndexRoute
+  '/api/resumes/': typeof ApiResumesIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -106,10 +120,12 @@ export interface FileRoutesByTo {
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/profiles/$profileId': typeof ApiProfilesProfileIdRoute
   '/api/profiles/active': typeof ApiProfilesActiveRoute
+  '/api/resumes/$resumeId': typeof ApiResumesResumeIdRoute
   '/api/trpc/$': typeof ApiTrpcSplatRoute
   '/api/user/me': typeof ApiUserMeRoute
   '/api/health': typeof ApiHealthIndexRoute
   '/api/profiles': typeof ApiProfilesIndexRoute
+  '/api/resumes': typeof ApiResumesIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -121,10 +137,12 @@ export interface FileRoutesById {
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/profiles/$profileId': typeof ApiProfilesProfileIdRoute
   '/api/profiles/active': typeof ApiProfilesActiveRoute
+  '/api/resumes/$resumeId': typeof ApiResumesResumeIdRoute
   '/api/trpc/$': typeof ApiTrpcSplatRoute
   '/api/user/me': typeof ApiUserMeRoute
   '/api/health/': typeof ApiHealthIndexRoute
   '/api/profiles/': typeof ApiProfilesIndexRoute
+  '/api/resumes/': typeof ApiResumesIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -137,10 +155,12 @@ export interface FileRouteTypes {
     | '/api/auth/$'
     | '/api/profiles/$profileId'
     | '/api/profiles/active'
+    | '/api/resumes/$resumeId'
     | '/api/trpc/$'
     | '/api/user/me'
     | '/api/health/'
     | '/api/profiles/'
+    | '/api/resumes/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -151,10 +171,12 @@ export interface FileRouteTypes {
     | '/api/auth/$'
     | '/api/profiles/$profileId'
     | '/api/profiles/active'
+    | '/api/resumes/$resumeId'
     | '/api/trpc/$'
     | '/api/user/me'
     | '/api/health'
     | '/api/profiles'
+    | '/api/resumes'
   id:
     | '__root__'
     | '/'
@@ -165,10 +187,12 @@ export interface FileRouteTypes {
     | '/api/auth/$'
     | '/api/profiles/$profileId'
     | '/api/profiles/active'
+    | '/api/resumes/$resumeId'
     | '/api/trpc/$'
     | '/api/user/me'
     | '/api/health/'
     | '/api/profiles/'
+    | '/api/resumes/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -179,10 +203,12 @@ export interface RootRouteChildren {
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
   ApiProfilesProfileIdRoute: typeof ApiProfilesProfileIdRoute
   ApiProfilesActiveRoute: typeof ApiProfilesActiveRoute
+  ApiResumesResumeIdRoute: typeof ApiResumesResumeIdRoute
   ApiTrpcSplatRoute: typeof ApiTrpcSplatRoute
   ApiUserMeRoute: typeof ApiUserMeRoute
   ApiHealthIndexRoute: typeof ApiHealthIndexRoute
   ApiProfilesIndexRoute: typeof ApiProfilesIndexRoute
+  ApiResumesIndexRoute: typeof ApiResumesIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -215,6 +241,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiAccountRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/resumes/': {
+      id: '/api/resumes/'
+      path: '/api/resumes'
+      fullPath: '/api/resumes/'
+      preLoaderRoute: typeof ApiResumesIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/profiles/': {
       id: '/api/profiles/'
       path: '/api/profiles'
@@ -241,6 +274,13 @@ declare module '@tanstack/react-router' {
       path: '/api/trpc/$'
       fullPath: '/api/trpc/$'
       preLoaderRoute: typeof ApiTrpcSplatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/resumes/$resumeId': {
+      id: '/api/resumes/$resumeId'
+      path: '/api/resumes/$resumeId'
+      fullPath: '/api/resumes/$resumeId'
+      preLoaderRoute: typeof ApiResumesResumeIdRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/profiles/active': {
@@ -294,10 +334,12 @@ const rootRouteChildren: RootRouteChildren = {
   ApiAuthSplatRoute: ApiAuthSplatRoute,
   ApiProfilesProfileIdRoute: ApiProfilesProfileIdRoute,
   ApiProfilesActiveRoute: ApiProfilesActiveRoute,
+  ApiResumesResumeIdRoute: ApiResumesResumeIdRoute,
   ApiTrpcSplatRoute: ApiTrpcSplatRoute,
   ApiUserMeRoute: ApiUserMeRoute,
   ApiHealthIndexRoute: ApiHealthIndexRoute,
   ApiProfilesIndexRoute: ApiProfilesIndexRoute,
+  ApiResumesIndexRoute: ApiResumesIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import {
   cssPathForElement,
@@ -132,36 +132,36 @@ describe("executeAutofill", () => {
     document.body.innerHTML = "";
   });
 
-  it("does not overwrite non-empty fields by default", () => {
+  it("does not overwrite non-empty fields by default", async () => {
     document.body.innerHTML =
       '<input data-searchparty-autofill-id="a" value="existing" />';
 
-    const result = executeAutofill([
+    const result = await executeAutofill([
       { spId: "a", value: "new" },
     ]);
 
     expect(result.appliedSpIds).toEqual([]);
     expect(document.querySelector("input")?.value).toBe(
-      "existing"
+      "existing",
     );
   });
 
-  it("fills empty fields and dispatches browser events", () => {
+  it("fills empty fields and dispatches browser events", async () => {
     document.body.innerHTML =
       '<input data-searchparty-autofill-id="a" />';
     const input = document.querySelector("input");
     const events: string[] = [];
     input?.addEventListener("input", () =>
-      events.push("input")
+      events.push("input"),
     );
     input?.addEventListener("change", () =>
-      events.push("change")
+      events.push("change"),
     );
     input?.addEventListener("blur", () =>
-      events.push("blur")
+      events.push("blur"),
     );
 
-    const result = executeAutofill([
+    const result = await executeAutofill([
       { spId: "a", value: "Jamie" },
     ]);
 
@@ -170,7 +170,7 @@ describe("executeAutofill", () => {
     expect(events).toEqual(["input", "change", "blur"]);
   });
 
-  it("matches native select options by visible label and verifies the result", () => {
+  it("matches native select options by visible label and verifies the result", async () => {
     document.body.innerHTML = `
       <select data-searchparty-autofill-id="country">
         <option value="">Choose one</option>
@@ -178,7 +178,7 @@ describe("executeAutofill", () => {
       </select>
     `;
 
-    const result = executeAutofill([
+    const result = await executeAutofill([
       { spId: "country", value: "United States" },
     ]);
 
@@ -189,21 +189,155 @@ describe("executeAutofill", () => {
     ]);
   });
 
-  it("sets checkbox state without double toggling", () => {
+  it("sets checkbox state without double toggling", async () => {
     document.body.innerHTML =
       '<input type="checkbox" data-searchparty-autofill-id="sms" />';
 
-    const result = executeAutofill([
+    const result = await executeAutofill([
       { spId: "sms", value: "true" },
     ]);
 
     expect(result.appliedSpIds).toEqual(["sms"]);
     expect(
-      document.querySelector<HTMLInputElement>("input")?.checked
+      document.querySelector<HTMLInputElement>("input")?.checked,
     ).toBe(true);
   });
 
-  it("reports verification failures without recording applied ids", () => {
+  it("attaches a data URL to a file input", async () => {
+    document.body.innerHTML =
+      '<input type="file" data-searchparty-autofill-id="cv" />';
+    const input = document.querySelector<HTMLInputElement>(
+      "input[type=file]",
+    );
+    const dataUrl = "data:text/plain;base64,SGVsbG8=";
+
+    const result = await executeAutofill([
+      {
+        spId: "cv",
+        value: "",
+        fileDataUrl: dataUrl,
+        fileName: "test-resume.txt",
+      },
+    ]);
+
+    expect(result.appliedSpIds).toEqual(["cv"]);
+    expect(input?.files?.length).toBe(1);
+    expect(input?.files?.[0]?.name).toBe("test-resume.txt");
+  });
+
+  it("attaches a file fetched from an HTTPS URL (presigned resume)", async () => {
+    document.body.innerHTML =
+      '<input type="file" data-searchparty-autofill-id="cv" />';
+    const input = document.querySelector<HTMLInputElement>(
+      "input[type=file]",
+    );
+
+    const stub = vi.fn(
+      async (): Promise<Response> =>
+        new Response(new Blob(["hello"], { type: "application/pdf" }), {
+          status: 200,
+          headers: { "Content-Type": "application/pdf" },
+        }),
+    );
+    vi.stubGlobal("fetch", stub);
+
+    try {
+      const result = await executeAutofill([
+        {
+          spId: "cv",
+          value: "",
+          fileDownloadUrl:
+            "https://cdn.example.test/resume.pdf?sig=abc",
+          fileName: "Brandon-Mitchell-Resume.pdf",
+        },
+      ]);
+
+      expect(stub).toHaveBeenCalledTimes(1);
+      expect(result.appliedSpIds).toEqual(["cv"]);
+      expect(input?.files?.length).toBe(1);
+      expect(input?.files?.[0]?.name).toBe(
+        "Brandon-Mitchell-Resume.pdf",
+      );
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+
+  it("prefers fileDownloadUrl over fileDataUrl when both are set", async () => {
+    document.body.innerHTML =
+      '<input type="file" data-searchparty-autofill-id="cv" />';
+    const input = document.querySelector<HTMLInputElement>(
+      "input[type=file]",
+    );
+
+    const stub = vi.fn(
+      async (): Promise<Response> =>
+        new Response(new Blob(["remote"], { type: "application/pdf" }), {
+          status: 200,
+        }),
+    );
+    vi.stubGlobal("fetch", stub);
+
+    try {
+      const result = await executeAutofill([
+        {
+          spId: "cv",
+          value: "",
+          fileDownloadUrl: "https://cdn.example.test/a.pdf",
+          fileDataUrl: "data:text/plain;base64,bG9jYWw=",
+          fileName: "from-url.pdf",
+        },
+      ]);
+
+      expect(stub).toHaveBeenCalledTimes(1);
+      expect(result.appliedSpIds).toEqual(["cv"]);
+      expect(
+        await input?.files?.[0]?.text(),
+      ).toBe("remote");
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+
+  it("fills hidden file inputs (display:none) used behind upload buttons", async () => {
+    document.body.innerHTML =
+      '<input type="file" data-searchparty-autofill-id="cv" style="display: none" />';
+    const input = document.querySelector<HTMLInputElement>(
+      "input[type=file]",
+    );
+    const dataUrl = "data:text/plain;base64,SGVsbG8=";
+
+    const result = await executeAutofill([
+      {
+        spId: "cv",
+        value: "",
+        fileDataUrl: dataUrl,
+        fileName: "test-resume.txt",
+      },
+    ]);
+
+    expect(result.appliedSpIds).toEqual(["cv"]);
+    expect(result.results[0]).toMatchObject({ spId: "cv", ok: true });
+    expect(input?.files?.length).toBe(1);
+  });
+
+  it("still skips non-file controls that are not visible", async () => {
+    document.body.innerHTML =
+      '<input data-searchparty-autofill-id="x" style="display: none" />';
+
+    const result = await executeAutofill([
+      { spId: "x", value: "hello" },
+    ]);
+
+    expect(result.appliedSpIds).toEqual([]);
+    expect(result.results[0]).toMatchObject({
+      spId: "x",
+      ok: false,
+      reason: "Field is not visible.",
+    });
+  });
+
+  it("reports verification failures without recording applied ids", async () => {
     document.body.innerHTML = `
       <select data-searchparty-autofill-id="country">
         <option value="">Choose one</option>
@@ -211,7 +345,7 @@ describe("executeAutofill", () => {
       </select>
     `;
 
-    const result = executeAutofill([
+    const result = await executeAutofill([
       { spId: "country", value: "Atlantis" },
     ]);
 

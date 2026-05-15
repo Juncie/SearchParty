@@ -1,4 +1,6 @@
-import { FormEvent } from "react";
+import { FormEvent, useRef, useState } from "react";
+
+import { formatPhoneNumberMask } from "@searchparty/utils";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -18,9 +20,33 @@ const textareaClassName = cn(
   "hover:bg-input/20 hover:border-input/80 disabled:cursor-not-allowed disabled:opacity-50 md:text-xs/relaxed dark:bg-input/20 dark:hover:bg-input/30",
 );
 
+const resumeAccept =
+  ".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+
+function formatFileSize(bytes: number): string {
+  if (bytes < 1024) {
+    return `${bytes} B`;
+  }
+  if (bytes < 1024 * 1024) {
+    return `${(bytes / 1024).toFixed(1)} KB`;
+  }
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
 export function AutofillTestSampleApplicationCard() {
+  const [phone, setPhone] = useState("");
+  const [resumeFile, setResumeFile] = useState<File | null>(null);
+  const resumeInputRef = useRef<HTMLInputElement>(null);
+
   const onSubmit = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+  };
+
+  const clearResume = () => {
+    setResumeFile(null);
+    if (resumeInputRef.current) {
+      resumeInputRef.current.value = "";
+    }
   };
 
   return (
@@ -90,6 +116,10 @@ export function AutofillTestSampleApplicationCard() {
               type="tel"
               autoComplete="tel"
               placeholder="+1 555 0100"
+              value={phone}
+              onChange={(e) => {
+                setPhone(formatPhoneNumberMask(e.target.value));
+              }}
             />
           </div>
           <div className="grid gap-2 @md:col-span-2">
@@ -150,6 +180,69 @@ export function AutofillTestSampleApplicationCard() {
               autoComplete="url"
               placeholder="https://…"
             />
+          </div>
+          <div className="grid gap-2 @md:col-span-2">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <span
+                className="text-xs font-medium text-foreground"
+                id="sp-resume-label"
+              >
+                Résumé or CV
+              </span>
+              {resumeFile ? (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="h-auto cursor-pointer py-1 text-xs text-muted-foreground hover:text-foreground"
+                  onClick={clearResume}
+                >
+                  Remove file
+                </Button>
+              ) : null}
+            </div>
+            <label
+              className={cn(
+                "inline-flex cursor-pointer flex-col rounded-[10px] border border-dashed border-border px-3 py-6 text-xs ring-offset-background transition-colors",
+                "hover:border-primary/50 hover:bg-muted/40 hover:text-foreground focus-within:ring-1 focus-within:ring-ring/40 text-muted-foreground",
+              )}
+              htmlFor="sp-resume"
+            >
+              <input
+                ref={resumeInputRef}
+                id="sp-resume"
+                name="resume"
+                type="file"
+                accept={resumeAccept}
+                className="sr-only"
+                aria-labelledby="sp-resume-label"
+                onChange={(event) => {
+                  const file = event.target.files?.item(0) ?? null;
+                  setResumeFile(file);
+                }}
+              />
+              <span className="text-xs/relaxed text-muted-foreground">
+                {resumeFile ? (
+                  <>
+                    <span className="font-medium text-foreground">
+                      {resumeFile.name}
+                    </span>
+                    <span className="text-muted-foreground">
+                      {" "}
+                      · {formatFileSize(resumeFile.size)}
+                      {resumeFile.type ? ` · ${resumeFile.type}` : ""}
+                    </span>
+                  </>
+                ) : (
+                  <>
+                    <span className="font-medium text-foreground">
+                      Choose file
+                    </span>
+                    <span> — PDF, Word (.doc, .docx)</span>
+                  </>
+                )}
+              </span>
+            </label>
           </div>
           <div className="grid gap-2 @md:col-span-2">
             <label

@@ -19,6 +19,22 @@ export const extensionAutofillApplyMessageType =
 export type ExtensionAutofillFill = {
   spId: string;
   value: string;
+  /**
+   * Presigned HTTPS URL to fetch as a {@link Blob} in the content script, then
+   * assign to `<input type="file">` via
+   * {@link https://developer.mozilla.org/en-US/docs/Web/API/DataTransfer | DataTransfer}.
+   *
+   * Prefer this over {@link ExtensionAutofillFill.fileDataUrl} — small IPC payload.
+   * When both are set, the apply step prefers `fileDownloadUrl`.
+   */
+  fileDownloadUrl?: string;
+  /**
+   * When set with a `data:` URL (and no preferred `fileDownloadUrl`), applied to
+   * `<input type="file">` via DataTransfer. Intended for tests or narrow debugging.
+   */
+  fileDataUrl?: string;
+  /** Suggested file name for the synthetic {@link File}. */
+  fileName?: string;
 };
 
 /** Apply message payload accepted by the content script. */

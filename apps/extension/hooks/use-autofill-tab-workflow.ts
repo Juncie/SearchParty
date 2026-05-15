@@ -8,16 +8,20 @@ import {
 import type { ApplicantProfile } from "@searchparty/shared";
 import {
   buildAutofillPayloadValues,
-  valueForAutofillKind,
+  formatResumeAttachmentLabel,
   type AutofillFieldExecutionResult,
   type ScannedAutofillFieldPayload,
 } from "@searchparty/shared";
 import { defaultSelectedForTier } from "@/components/autofill/autofill-display";
+import { buildExtensionAutofillFills } from "@/lib/build-extension-autofill-fills";
 import {
   applyAutofillToActiveTab,
   scanActiveTab,
 } from "@/lib/autofill-active-tab";
-import type { AuthSession } from "@/lib/searchparty-api";
+import {
+  listUploadedResumes,
+  type AuthSession,
+} from "@/lib/searchparty-api";
 
 type WorkflowStatus = "idle" | "scanning" | "applying";
 
@@ -39,6 +43,11 @@ export function useAutofillTabWorkflow(
   const [applyResults, setApplyResults] = useState<
     Record<string, AutofillFieldExecutionResult>
   >({});
+  const [defaultResume, setDefaultResume] = useState<{
+    id: string;
+    label: string;
+    mimeType: string;
+  } | null>(null);
 
   const payload = useMemo(() => {
     if (!session?.user || !profile) {
@@ -50,8 +59,46 @@ export function useAutofillTabWorkflow(
         email: session.user.email,
       },
       profile,
+      resumeAttachment: defaultResume
+        ? { label: defaultResume.label }
+        : undefined,
     });
-  }, [session, profile]);
+  }, [session, profile, defaultResume]);
+
+  useEffect(() => {
+    if (!session?.user) {
+      setDefaultResume(null);
+      return;
+    }
+    let cancelled = false;
+    void (async () => {
+      try {
+        const { resumes } = await listUploadedResumes();
+        if (cancelled) {
+          return;
+        }
+        const first = resumes.find((r) => r.uploadStatus === "ready");
+        setDefaultResume(
+          first
+            ? {
+              id: first.id,
+              label: formatResumeAttachmentLabel({
+                mimeType: first.mimeType,
+              }),
+              mimeType: first.mimeType,
+            }
+            : null,
+        );
+      } catch {
+        if (!cancelled) {
+          setDefaultResume(null);
+        }
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [session?.user?.id]);
 
   const runScan = useCallback(
     async (mode: "cached" | "refresh") => {
@@ -104,19 +151,26 @@ export function useAutofillTabWorkflow(
     setError(null);
     setApplyResults({});
     setStatus("applying");
-    const fills = fields
-      .filter(
-        (f) =>
-          selected[f.spId] && f.fillStatus === "fillable",
-      )
-      .map((f) => ({
-        spId: f.spId,
-        value: valueForAutofillKind(payload, f.kind),
-      }))
-      .filter((f) => f.value.trim().length > 0);
+    let fills;
+    try {
+      fills = await buildExtensionAutofillFills({
+        fields,
+        selected,
+        payload,
+        defaultResume,
+      });
+    } catch (fetchError) {
+      setError(
+        fetchError instanceof Error
+          ? fetchError.message
+          : "Could not load your resume for file autofill.",
+      );
+      setStatus("idle");
+      return;
+    }
     if (fills.length === 0) {
       setError(
-        "Select at least one field with a non-empty value in your profile.",
+        "Select at least one field with a value in your profile (or a ready resume for file upload fields).",
       );
       setStatus("idle");
       return;
@@ -141,7 +195,7 @@ export function useAutofillTabWorkflow(
         : `Applied ${res.appliedSpIds.length} field${res.appliedSpIds.length === 1 ? "" : "s"}.`,
     );
     setStatus("idle");
-  }, [fields, payload, selected]);
+  }, [fields, payload, selected, defaultResume]);
 
   const onToggleField = useCallback(
     (spId: string, checked: boolean) => {
@@ -163,6 +217,7 @@ export function useAutofillTabWorkflow(
     apply,
     applyResults,
     payload,
+    defaultResume,
     status,
     error,
     notice,

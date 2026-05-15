@@ -15,6 +15,7 @@ import {
   readDomainMemoryHint,
   recordAcceptedAutofillMatches,
 } from "@/lib/autofill/domainMemory";
+import { agentDebugLog } from "@/lib/agent-debug-log";
 import { executeAutofill } from "@/lib/autofill/executeAutofill";
 import { extractDomFields } from "@/lib/autofill/extractDomFields";
 
@@ -58,6 +59,9 @@ function fillStatusForField(
       unsupportedReason:
         "Consent checkboxes need an explicit user choice before SearchParty fills them.",
     };
+  }
+  if (interactionType === "file" && kind === "resume") {
+    return { fillStatus: "fillable" };
   }
   if (
     interactionType === "file" ||
@@ -230,6 +234,17 @@ async function recordAppliedFields(
 export default defineContentScript({
   matches: ["http://*/*", "https://*/*"],
   main() {
+    // #region agent log
+    agentDebugLog({
+      hypothesisId: "H-inject",
+      location: "autofill.content.ts:main",
+      message: "Autofill content script loaded",
+      data: {
+        origin: globalThis.location?.origin ?? "",
+        pathLen: (globalThis.location?.pathname ?? "").length,
+      },
+    });
+    // #endregion
     scheduleInitialAutofillScan();
 
     browser.runtime.onMessage.addListener(
@@ -283,26 +298,28 @@ export default defineContentScript({
           "fills" in message &&
           Array.isArray(message.fills)
         ) {
-          try {
-            const applyMessage =
-              message as ExtensionAutofillApplyMessage;
-            const { appliedSpIds, results } = executeAutofill(
-              applyMessage.fills,
-              applyMessage.options
-            );
-            void recordAppliedFields(appliedSpIds).catch(
-              () => {
-                /* memory is helpful, but filling should not fail if storage does */
-              }
-            );
-            sendResponse({ ok: true, appliedSpIds, results });
-          } catch (error) {
-            const msg =
-              error instanceof Error
-                ? error.message
-                : "Apply failed.";
-            sendResponse({ ok: false, error: msg });
-          }
+          const applyMessage =
+            message as ExtensionAutofillApplyMessage;
+          void (async () => {
+            try {
+              const { appliedSpIds, results } = await executeAutofill(
+                applyMessage.fills,
+                applyMessage.options,
+              );
+              void recordAppliedFields(appliedSpIds).catch(
+                () => {
+                  /* memory is helpful, but filling should not fail if storage does */
+                },
+              );
+              sendResponse({ ok: true, appliedSpIds, results });
+            } catch (error) {
+              const msg =
+                error instanceof Error
+                  ? error.message
+                  : "Apply failed.";
+              sendResponse({ ok: false, error: msg });
+            }
+          })();
           return true;
         }
 

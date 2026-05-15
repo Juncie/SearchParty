@@ -3,17 +3,11 @@ import {
   integer,
   jsonb,
   pgTable,
-  serial,
   text,
   timestamp,
 } from 'drizzle-orm/pg-core'
 import { sql } from 'drizzle-orm'
 
-export const todos = pgTable('todos', {
-  id: serial().primaryKey(),
-  title: text().notNull(),
-  createdAt: timestamp('created_at').defaultNow(),
-})
 
 export const user = pgTable('user', {
   id: text('id').primaryKey(),
@@ -172,6 +166,25 @@ export const userProfileSettings = pgTable('user_profile_settings', {
     .notNull()
     .default(sql`'{}'::jsonb`),
   accountOnboardingCompletedAt: timestamp('account_onboarding_completed_at'),
+  updatedAt: timestamp('updated_at')
+    .notNull()
+    .defaultNow()
+    .$onUpdate(() => new Date()),
+})
+
+export const resumes = pgTable('resumes', {
+  id: text('id').primaryKey(),
+  kind: text('kind').notNull(),
+  userId: text('user_id')
+    .notNull()
+    .references(() => user.id, { onDelete: 'cascade' }),
+  storageProvider: text('storage_provider').notNull(),
+  storageKey: text('storage_key').notNull(),
+  mimeType: text('mime_type').notNull(),
+  sizeBytes: integer('size_bytes').notNull(),
+  checksum: text('checksum').notNull().default(''),
+  uploadStatus: text('upload_status').notNull().default('pending'),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
   updatedAt: timestamp('updated_at')
     .notNull()
     .defaultNow()

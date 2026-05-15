@@ -4,6 +4,7 @@
 
 import * as React from "react";
 import type { ProfileQuestion } from "@searchparty/data/profile-questions";
+import { formatPhoneNumberMask } from "@searchparty/utils";
 
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
@@ -21,6 +22,11 @@ export interface QuestionFieldProps {
   invalid?: boolean;
   /** Error surfaced after attempting to advance. */
   errorText?: string;
+  /**
+   * When set (e.g. wizard résumé), runs after the user picks a file and stores
+   * the resolved JSON-safe value from the returned promise.
+   */
+  fileCommit?: (file: File) => Promise<unknown>;
 }
 
 function ToggleChip({
@@ -49,6 +55,7 @@ export function QuestionField({
   onChange,
   invalid,
   errorText,
+  fileCommit,
 }: QuestionFieldProps) {
   const fieldSetId = `field-${question.field}`;
   const errorId = `${fieldSetId}-error`;
@@ -77,6 +84,7 @@ export function QuestionField({
         value,
         onChange,
         invalid,
+        fileCommit,
       })}
 
       {invalid && errorText ? (
@@ -119,7 +127,7 @@ function TagsAnswerFields({
         {tags.map((chip) => (
           <span
             key={chip}
-            className="inline-flex items-center gap-1 rounded-full border border-[color:var(--chip-line)] bg-[color:var(--chip-bg)] px-2 py-0.5 text-[0.7rem]"
+            className="inline-flex items-center gap-1 rounded-full border border-(--chip-line) bg-(--chip-bg) px-2 py-0.5 text-xs"
           >
             {chip}
             <button
@@ -168,11 +176,121 @@ function TagsAnswerFields({
   );
 }
 
+function FileQuestionInput({
+  question,
+  value,
+  onChange,
+  invalid,
+  describedBy,
+  fileCommit,
+}: Omit<QuestionFieldProps, "errorText"> & {
+  describedBy?: string;
+  fileCommit?: (file: File) => Promise<unknown>;
+}) {
+  const [uploading, setUploading] = React.useState(false);
+  const [commitError, setCommitError] = React.useState<string | null>(null);
+  const meta =
+    typeof value === "object" &&
+    value !== null &&
+    "fileName" in value
+      ? (value as {
+          fileName?: string;
+          uploadStatus?: string;
+        })
+      : undefined;
+  const commitErrorId = `field-${question.field}-file-commit-error`;
+  const ariaDescribedBy =
+    [describedBy, commitError ? commitErrorId : undefined]
+      .filter(Boolean)
+      .join(" ") || undefined;
+
+  const browseHint = (question.acceptedFileTypes ?? []).length
+    ? (question.acceptedFileTypes ?? []).join(" · ")
+    : ".pdf · .doc · .docx";
+
+  const statusLine = uploading
+    ? "Uploading to SearchParty…"
+    : meta?.fileName && meta.uploadStatus === "ready"
+      ? `Stored · ${meta.fileName}`
+      : (meta?.fileName?.length ?? 0) > 0
+        ? `Selected · ${meta?.fileName ?? ""}`
+        : browseHint;
+
+  return (
+    <div className="grid gap-2">
+      <label
+        className={cn(
+          "inline-flex cursor-pointer flex-col rounded-[10px] border border-dashed border-border px-3 py-6 text-xs ring-offset-background transition-colors hover:border-primary/50 hover:bg-muted/40 hover:text-foreground focus-within:ring-1 focus-within:ring-ring/40 text-muted-foreground",
+          invalid &&
+            "border-destructive/65 bg-destructive/15 text-destructive",
+          uploading && "pointer-events-none cursor-wait opacity-80",
+        )}
+        aria-busy={uploading}
+      >
+        <input
+          aria-invalid={invalid}
+          aria-describedby={ariaDescribedBy}
+          type="file"
+          accept={(question.acceptedFileTypes ?? []).join(",")}
+          className="sr-only"
+          disabled={uploading}
+          onChange={(event) => {
+            const file = event.target.files?.item(0);
+            event.target.value = "";
+            setCommitError(null);
+            if (!file) {
+              onChange(null);
+              return;
+            }
+            if (!fileCommit) {
+              onChange({
+                fileName: file.name,
+                fileSize: file.size,
+                mimeType: file.type,
+              });
+              return;
+            }
+            void (async () => {
+              setUploading(true);
+              try {
+                const result = await fileCommit(file);
+                onChange(result);
+              } catch (err) {
+                onChange(null);
+                setCommitError(
+                  err instanceof Error
+                    ? err.message
+                    : "Résumé upload failed.",
+                );
+              } finally {
+                setUploading(false);
+              }
+            })();
+          }}
+        />
+        <span className="text-muted-foreground text-xs/relaxed">
+          Browse — {statusLine}
+        </span>
+      </label>
+      {commitError ? (
+        <p
+          role="alert"
+          id={commitErrorId}
+          className="font-normal normal-case tracking-normal leading-relaxed text-destructive text-xs"
+        >
+          {commitError}
+        </p>
+      ) : null}
+    </div>
+  );
+}
+
 function renderControl({
   question,
   value,
   onChange,
   invalid,
+  fileCommit,
 }: Omit<
   QuestionFieldProps,
   "errorText"
@@ -181,8 +299,21 @@ function renderControl({
     ? `${`field-${question.field}`}-error`
     : undefined;
   switch (question.type) {
-    case "text":
     case "tel":
+      return (
+        <Input
+          id={`field-${question.field}`}
+          type="tel"
+          placeholder={question.placeholder}
+          aria-invalid={invalid}
+          aria-describedby={describedBy}
+          value={(value as string) ?? ""}
+          onChange={(event) => {
+            onChange(formatPhoneNumberMask(event.target.value));
+          }}
+        />
+      );
+    case "text":
     case "url":
       return (
         <Input
@@ -343,54 +474,17 @@ function renderControl({
           describedBy={describedBy}
         />
       );
-    case "file": {
-      const meta =
-        typeof value === "object" &&
-        value !== null &&
-        "fileName" in value
-          ? (value as { fileName?: string })
-          : undefined;
+    case "file":
       return (
-        <div className="grid gap-2">
-          <label
-            className={cn(
-              "inline-flex cursor-pointer flex-col rounded-[10px] border border-dashed border-border px-3 py-6 text-xs ring-offset-background transition-colors hover:border-primary/50 hover:bg-muted/40 hover:text-foreground focus-within:ring-1 focus-within:ring-ring/40 text-muted-foreground",
-              invalid &&
-                "border-destructive/65 bg-destructive/15 text-destructive"
-            )}
-          >
-            <input
-              aria-invalid={invalid}
-              aria-describedby={describedBy}
-              type="file"
-              accept={(
-                question.acceptedFileTypes ?? []
-              ).join(",")}
-              className="sr-only"
-              onChange={(event) => {
-                const file = event.target.files?.item(0);
-                if (!file) {
-                  onChange(null);
-                  return;
-                }
-
-                onChange({
-                  fileName: file.name,
-                  fileSize: file.size,
-                  mimeType: file.type,
-                });
-              }}
-            />
-            <span className="text-muted-foreground text-xs/relaxed">
-              Browse —{" "}
-              {(meta?.fileName?.length ?? 0) > 0
-                ? `Selected · ${meta?.fileName}`
-                : ".pdf · .doc · .docx"}
-            </span>
-          </label>
-        </div>
+        <FileQuestionInput
+          question={question}
+          value={value}
+          onChange={onChange}
+          invalid={invalid}
+          describedBy={describedBy}
+          fileCommit={fileCommit}
+        />
       );
-    }
     default:
       return (
         <p className="text-destructive text-xs normal-case tracking-normal leading-relaxed font-normal">

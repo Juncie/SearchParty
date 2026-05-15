@@ -219,4 +219,6 @@ export const accountSetupResponseSchema = accountSetupSchema.extend({
 
 export type AccountSetupResponse = z.infer<typeof accountSetupResponseSchema>;
 
+export * from "./resume-documents";
+export * from "./resume-presigned-upload";
 export * from "./autofill/index";

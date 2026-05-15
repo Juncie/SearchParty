@@ -88,6 +88,22 @@ describe("Fuse-based autofill scoring", () => {
     expect(resume.score).toBeGreaterThanOrEqual(70);
   });
 
+  it("does not penalize hidden resume file inputs for visibility", () => {
+    const resume = matchDomFieldToAutofillDetailed({
+      tagName: "input",
+      type: "file",
+      labelText: "Upload resume",
+      interactionType: "file",
+      isVisible: false,
+      isDisabled: false,
+    });
+
+    expect(resume.kind).toBe("resume");
+    expect(resume.penalties.join(" ")).not.toContain(
+      "field is not visible",
+    );
+  });
+
   it("does not let sibling field copy in formText steal phone/email matches", () => {
     const coverLetter = matchDomFieldToAutofillDetailed({
       tagName: "textarea",

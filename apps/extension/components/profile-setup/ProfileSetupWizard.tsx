@@ -26,6 +26,7 @@ import {
 import { StepHeader } from "./StepHeader";
 import { WizardFooter } from "./WizardFooter";
 import { WizardProgress } from "./WizardProgress";
+import { uploadResumeFromWizardFile } from "@/lib/searchparty-api";
 
 export interface ProfileSetupWizardProps {
   /** When true, eligibility questions were already completed for this user. */
@@ -122,6 +123,21 @@ function formatAnswerReview(
           : "No"
         : String(raw);
     case "file":
+      if (
+        typeof raw === "object" &&
+        raw !== null &&
+        "resumeId" in raw &&
+        typeof (raw as { resumeId?: unknown }).resumeId === "string" &&
+        (raw as { uploadStatus?: string }).uploadStatus === "ready" &&
+        typeof (raw as { fileName?: unknown }).fileName === "string"
+      ) {
+        const stored = raw as {
+          resumeId: string;
+          uploadStatus: "ready";
+          fileName: string;
+        };
+        return `Stored · ${stored.fileName}`;
+      }
       return typeof raw === "object" &&
         raw !== null &&
         "fileName" in raw &&
@@ -340,6 +356,11 @@ export function ProfileSetupWizard({
                         : false
                     }
                     errorText={errorText}
+                    fileCommit={
+                      question.field === "resumeUpload"
+                        ? uploadResumeFromWizardFile
+                        : undefined
+                    }
                     onChange={(nextValue: unknown) => {
                       setAnswers((previous) => ({
                         ...previous,

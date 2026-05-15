@@ -43,10 +43,10 @@ function RadioGroupCard({
             key={opt}
             htmlFor={optId}
             className={cn(
-              'flex cursor-pointer items-start gap-2.5 rounded-[10px] border border-border bg-card px-3 py-2.5 ring-1 ring-foreground/5 transition-colors hover:bg-accent has-[:disabled]:cursor-not-allowed has-[:disabled]:opacity-50 has-[[data-state=checked]]:border-primary has-[[data-state=checked]]:ring-primary/20',
+              'flex cursor-pointer items-start gap-2.5 rounded-[10px] border border-border bg-card px-3 py-2.5 ring-1 ring-foreground/5 transition-colors hover:bg-accent has-disabled:cursor-not-allowed has-disabled:opacity-50 has-checked:border-primary has-checked:ring-primary/20',
             )}
           >
-            <span className="grid size-9 shrink-0 place-content-center rounded-md border border-input bg-background has-[[data-state=checked]]:border-primary has-[[data-state=checked]]:bg-primary/10 dark:bg-input/20">
+            <span className="grid size-9 shrink-0 place-content-center rounded-md border border-input bg-background has-data-[state=checked]:border-primary has-data-[state=checked]:bg-primary/10 dark:bg-input/20">
               <input
                 id={optId}
                 type="radio"

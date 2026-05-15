@@ -6,6 +6,17 @@ export const env = createEnv({
     DATABASE_URL: z.url().optional(),
     SERVER_URL: z.url().optional(),
     BASE_API_URL: z.url().optional(),
+    /** Cloudflare account id (R2 S3 endpoint). */
+    R2_ACCOUNT_ID: z.string().min(1).optional(),
+    R2_ACCESS_KEY_ID: z.string().min(1).optional(),
+    /** R2 S3 API secret access key. */
+    R2_SECRET_ACCESS_KEY: z.string().min(1).optional(),
+    /**
+     * Legacy alias for `R2_SECRET_ACCESS_KEY` when only one “API token” value
+     * is configured.
+     */
+    R2_API_TOKEN: z.string().min(1).optional(),
+    R2_BUCKET_NAME: z.string().min(1).optional(),
   },
 
   /**

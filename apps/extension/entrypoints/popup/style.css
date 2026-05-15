@@ -6,6 +6,10 @@
 
 /* Extension layout tokens (single source for popup width + auth container breakpoints) */
 :root {
+  /* Native form controls (esp. <select> lists) follow the UA color scheme; without
+   * this, Windows Chrome can paint a light dropdown while the page uses dark tokens,
+   * yielding light-on-light options. */
+  color-scheme: light;
   --sp-extension-shell-width: 360px;
   --sp-auth-gap-tight: 0.5rem;
   --sp-auth-gap-sm: 0.625rem;
@@ -85,6 +89,17 @@
     color: var(--foreground);
     @apply bg-background text-foreground;
   }
+}
+
+/* Native <select>: option rows do not reliably inherit the parent surface; keep
+ * them on popover tokens so light and dark modes stay readable (see AppearanceSettingsSection). */
+html.dark {
+  color-scheme: dark;
+}
+
+select option {
+  background-color: var(--popover);
+  color: var(--popover-foreground);
 }
 
 * {

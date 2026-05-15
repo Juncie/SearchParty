@@ -1,4 +1,5 @@
 import type { AccountSetup } from "@searchparty/shared";
+import { formatPhoneNumberMask } from "@searchparty/utils";
 import {
   Card,
   CardContent,
@@ -51,9 +52,13 @@ export function AccountPersonalInfoCard({
         <label className="grid gap-1 text-xs font-semibold">
           Phone
           <Input
+            type="tel"
             value={setup.phone}
             onChange={(e) =>
-              onSetupChange({ ...setup, phone: e.target.value })
+              onSetupChange({
+                ...setup,
+                phone: formatPhoneNumberMask(e.target.value),
+              })
             }
             placeholder="+1 ..."
             autoComplete="tel"

@@ -253,7 +253,9 @@ export function scoreAutofillField(
     score -= 45;
     penalties.push("field is disabled");
   }
-  if (signals.isVisible === false) {
+  const skipHiddenPenalty =
+    kind === "resume" && signals.interactionType === "file";
+  if (signals.isVisible === false && !skipHiddenPenalty) {
     score -= 35;
     penalties.push("field is not visible");
   }

@@ -9,6 +9,7 @@ import {
 import type { ApplicantProfile } from "@searchparty/shared";
 import {
   buildAutofillPayloadValues,
+  formatResumeAttachmentLabel,
   valueForAutofillKind,
 } from "@searchparty/shared";
 import { DashboardAutofillSection } from "@/components/dashboard/DashboardAutofillSection";
@@ -20,12 +21,14 @@ import {
 } from "@/components/autofill/autofill-display";
 import { HeroCard } from "@/components/HeroCard";
 import { useActiveTabAutofillScan } from "@/hooks/use-active-tab-autofill-scan";
+import { buildExtensionAutofillFills } from "@/lib/build-extension-autofill-fills";
 import { applyAutofillToActiveTab } from "@/lib/autofill-active-tab";
 import {
   deleteApplicantProfile,
   getAccountSetupResponse,
   getAuthSession,
   listApplicantProfiles,
+  listUploadedResumes,
   setActiveApplicantProfile,
   type AuthSession,
 } from "@/lib/searchparty-api";
@@ -59,6 +62,11 @@ export function DashboardPage({
   const [quickError, setQuickError] = useState<string | null>(
     null,
   );
+  const [defaultResume, setDefaultResume] = useState<{
+    id: string;
+    label: string;
+    mimeType: string;
+  } | null>(null);
 
   const {
     fields: scanFields,
@@ -105,6 +113,26 @@ export function DashboardPage({
       setSession(currentSession);
       setProfiles(profileResponse.profiles);
       setActiveProfileId(profileResponse.activeProfileId);
+
+      try {
+        const resumeList = await listUploadedResumes();
+        const first = resumeList.resumes.find(
+          (r) => r.uploadStatus === "ready",
+        );
+        setDefaultResume(
+          first
+            ? {
+                id: first.id,
+                label: formatResumeAttachmentLabel({
+                  mimeType: first.mimeType,
+                }),
+                mimeType: first.mimeType,
+              }
+            : null,
+        );
+      } catch {
+        setDefaultResume(null);
+      }
     } catch (loadError) {
       setError(
         loadError instanceof Error
@@ -130,22 +158,39 @@ export function DashboardPage({
     setQuickApplyBusy(true);
     try {
       const latestFields = await refreshScan("cached");
+      const quickFields = quickApplyFields(latestFields);
+      const selected = Object.fromEntries(
+        quickFields.map((f) => [f.spId, true]),
+      );
       const payload = buildAutofillPayloadValues({
         user: {
           name: session.user.name,
           email: session.user.email,
         },
         profile: defaultProfile,
+        resumeAttachment: defaultResume
+          ? { label: defaultResume.label }
+          : undefined,
       });
-      const fills = quickApplyFields(latestFields)
-        .map((f) => ({
-          spId: f.spId,
-          value: valueForAutofillKind(payload, f.kind),
-        }))
-        .filter((f) => f.value.trim().length > 0);
+      let fills;
+      try {
+        fills = await buildExtensionAutofillFills({
+          fields: latestFields,
+          selected,
+          payload,
+          defaultResume,
+        });
+      } catch (fetchError) {
+        setQuickError(
+          fetchError instanceof Error
+            ? fetchError.message
+            : "Could not load your resume for file autofill.",
+        );
+        return;
+      }
       if (fills.length === 0) {
         setQuickError(
-          "No high-confidence matches with values from your default profile. Try Preview matches.",
+          "No high-confidence matches with values from your default profile (or a ready resume for file fields). Try Preview matches.",
         );
         return;
       }
@@ -160,7 +205,7 @@ export function DashboardPage({
     } finally {
       setQuickApplyBusy(false);
     }
-  }, [defaultProfile, refreshScan, session]);
+  }, [defaultProfile, defaultResume, refreshScan, session]);
 
   const handleApplyProfile = useCallback(
     async (profile: ApplicantProfile) => {
@@ -173,22 +218,39 @@ export function DashboardPage({
       setQuickApplyBusy(true);
       try {
         const latestFields = await refreshScan("cached");
+        const quickFields = quickApplyFields(latestFields);
+        const selected = Object.fromEntries(
+          quickFields.map((f) => [f.spId, true]),
+        );
         const payload = buildAutofillPayloadValues({
           user: {
             name: session.user.name,
             email: session.user.email,
           },
           profile,
+          resumeAttachment: defaultResume
+            ? { label: defaultResume.label }
+            : undefined,
         });
-        const fills = quickApplyFields(latestFields)
-          .map((f) => ({
-            spId: f.spId,
-            value: valueForAutofillKind(payload, f.kind),
-          }))
-          .filter((f) => f.value.trim().length > 0);
+        let fills;
+        try {
+          fills = await buildExtensionAutofillFills({
+            fields: latestFields,
+            selected,
+            payload,
+            defaultResume,
+          });
+        } catch (fetchError) {
+          setQuickError(
+            fetchError instanceof Error
+              ? fetchError.message
+              : "Could not load your resume for file autofill.",
+          );
+          return;
+        }
         if (fills.length === 0) {
           setQuickError(
-            "Nothing to apply for quick matches on this page with that profile.",
+            "Nothing to apply for quick matches on this page with that profile (add profile values or upload a resume).",
           );
           return;
         }
@@ -204,7 +266,7 @@ export function DashboardPage({
         setQuickApplyBusy(false);
       }
     },
-    [refreshScan, session],
+    [defaultResume, refreshScan, session],
   );
 
   const handleSetDefaultProfile = useCallback(
@@ -250,22 +312,33 @@ export function DashboardPage({
 
   const defaultPayload =
     session?.user && defaultProfile
-      && buildAutofillPayloadValues({
+      ? buildAutofillPayloadValues({
           user: {
             name: session.user.name,
             email: session.user.email,
           },
           profile: defaultProfile,
+          resumeAttachment: defaultResume
+            ? { label: defaultResume.label }
+            : undefined,
         })
-     
+      : null;
 
   const hasQuickTargets =
     Boolean(defaultPayload) &&
-    quickApplyFields(scanFields).some(
-      (f) =>
-        valueForAutofillKind(defaultPayload!, f.kind).trim()
-          .length > 0,
-    );
+    quickApplyFields(scanFields).some((f) => {
+      if (
+        f.kind === "resume" &&
+        f.interactionType === "file" &&
+        defaultResume
+      ) {
+        return true;
+      }
+      return (
+        valueForAutofillKind(defaultPayload!, f.kind).trim().length >
+        0
+      );
+    });
 
   const blockError = scanError ?? quickError;
   const blockNotice = quickNotice;
@@ -298,6 +371,7 @@ export function DashboardPage({
         onPreviewMatches={() =>
           void navigate({ to: "/autofill" })
         }
+        onScanTab={() => void refreshScan("refresh")}
       />
 
       <DashboardProfilesSection
@@ -305,6 +379,7 @@ export function DashboardPage({
         session={session}
         activeProfileId={activeProfileId}
         scanFields={scanFields}
+        defaultResume={defaultResume}
         isLoading={status === "loading"}
         error={error}
         applyBusy={quickApplyBusy}

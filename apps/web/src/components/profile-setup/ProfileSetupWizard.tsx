@@ -23,6 +23,7 @@ import type {
   ProfileQuestionGroup,
 } from '@searchparty/data/profile-questions'
 import { Card, CardContent, CardFooter, CardHeader } from '#/components/ui/card'
+import { uploadResumeFromWizardFile } from '#/lib/wizard-resume-upload'
 
 export interface ProfileSetupWizardProps {
   /** When true, eligibility questions were already completed for this user. */
@@ -103,7 +104,18 @@ function formatAnswerReview(question: ProfileQuestion, raw: unknown): string {
     case 'checkbox':
       return typeof raw === 'boolean' ? (raw ? 'Yes' : 'No') : String(raw)
     case 'file':
+      if (
+        typeof raw === 'object' &&
+        raw !== null &&
+        'resumeId' in raw &&
+        typeof (raw as { resumeId?: unknown }).resumeId === 'string' &&
+        (raw as { uploadStatus?: string }).uploadStatus === 'ready' &&
+        typeof (raw as { fileName?: unknown }).fileName === 'string'
+      ) {
+        return `Stored · ${(raw as { fileName: string }).fileName}`
+      }
       return typeof raw === 'object' &&
+        raw !== null &&
         'fileName' in raw &&
         typeof (raw as { fileName?: string }).fileName === 'string'
         ? (raw as { fileName: string }).fileName
@@ -317,6 +329,11 @@ export function ProfileSetupWizard({
                     value={fieldValue}
                     invalid={invalid && question.required}
                     errorText={errorText}
+                    fileCommit={
+                      question.field === 'resumeUpload'
+                        ? uploadResumeFromWizardFile
+                        : undefined
+                    }
                     onChange={(nextValue: unknown) => {
                       setAnswers((previous) => ({
                         ...previous,
