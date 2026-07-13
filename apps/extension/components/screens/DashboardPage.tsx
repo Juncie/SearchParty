@@ -51,7 +51,7 @@ export function DashboardPage({
     string | null
   >(null);
   const [status, setStatus] = useState<"loading" | "idle">(
-    "loading",
+    "loading"
   );
   const [error, setError] = useState<string | null>(null);
   const [quickApplyBusy, setQuickApplyBusy] =
@@ -59,14 +59,18 @@ export function DashboardPage({
   const [quickNotice, setQuickNotice] = useState<
     string | null
   >(null);
-  const [quickError, setQuickError] = useState<string | null>(
-    null,
-  );
+  const [quickError, setQuickError] = useState<
+    string | null
+  >(null);
   const [defaultResume, setDefaultResume] = useState<{
     id: string;
     label: string;
     mimeType: string;
   } | null>(null);
+  const [
+    accountOnboardingAnswers,
+    setAccountOnboardingAnswers,
+  ] = useState<Record<string, unknown>>({});
 
   const {
     fields: scanFields,
@@ -87,7 +91,7 @@ export function DashboardPage({
     () =>
       profiles.find((p) => p.id === activeProfileId) ??
       null,
-    [profiles, activeProfileId],
+    [profiles, activeProfileId]
   );
 
   const loadDashboard = useCallback(async () => {
@@ -108,6 +112,9 @@ export function DashboardPage({
         void navigate({ to: "/profiles/new" });
         return;
       }
+      setAccountOnboardingAnswers(
+        account.accountOnboardingAnswers ?? {}
+      );
 
       const profileResponse = await listApplicantProfiles();
       setSession(currentSession);
@@ -117,7 +124,7 @@ export function DashboardPage({
       try {
         const resumeList = await listUploadedResumes();
         const first = resumeList.resumes.find(
-          (r) => r.uploadStatus === "ready",
+          (r) => r.uploadStatus === "ready"
         );
         setDefaultResume(
           first
@@ -128,7 +135,7 @@ export function DashboardPage({
                 }),
                 mimeType: first.mimeType,
               }
-            : null,
+            : null
         );
       } catch {
         setDefaultResume(null);
@@ -160,7 +167,7 @@ export function DashboardPage({
       const latestFields = await refreshScan("cached");
       const quickFields = quickApplyFields(latestFields);
       const selected = Object.fromEntries(
-        quickFields.map((f) => [f.spId, true]),
+        quickFields.map((f) => [f.spId, true])
       );
       const payload = buildAutofillPayloadValues({
         user: {
@@ -168,6 +175,7 @@ export function DashboardPage({
           email: session.user.email,
         },
         profile: defaultProfile,
+        accountOnboardingAnswers,
         resumeAttachment: defaultResume
           ? { label: defaultResume.label }
           : undefined,
@@ -184,13 +192,13 @@ export function DashboardPage({
         setQuickError(
           fetchError instanceof Error
             ? fetchError.message
-            : "Could not load your resume for file autofill.",
+            : "Could not load your resume for file autofill."
         );
         return;
       }
       if (fills.length === 0) {
         setQuickError(
-          "No high-confidence matches with values from your default profile (or a ready resume for file fields). Try Preview matches.",
+          "No high-confidence matches with values from your default profile (or a ready resume for file fields). Try Preview matches."
         );
         return;
       }
@@ -200,12 +208,18 @@ export function DashboardPage({
         return;
       }
       setQuickNotice(
-        `Filled ${fills.length} field${fills.length === 1 ? "" : "s"} on this page.`,
+        `Filled ${fills.length} field${fills.length === 1 ? "" : "s"} on this page.`
       );
     } finally {
       setQuickApplyBusy(false);
     }
-  }, [defaultProfile, defaultResume, refreshScan, session]);
+  }, [
+    accountOnboardingAnswers,
+    defaultProfile,
+    defaultResume,
+    refreshScan,
+    session,
+  ]);
 
   const handleApplyProfile = useCallback(
     async (profile: ApplicantProfile) => {
@@ -220,7 +234,7 @@ export function DashboardPage({
         const latestFields = await refreshScan("cached");
         const quickFields = quickApplyFields(latestFields);
         const selected = Object.fromEntries(
-          quickFields.map((f) => [f.spId, true]),
+          quickFields.map((f) => [f.spId, true])
         );
         const payload = buildAutofillPayloadValues({
           user: {
@@ -228,6 +242,7 @@ export function DashboardPage({
             email: session.user.email,
           },
           profile,
+          accountOnboardingAnswers,
           resumeAttachment: defaultResume
             ? { label: defaultResume.label }
             : undefined,
@@ -244,13 +259,13 @@ export function DashboardPage({
           setQuickError(
             fetchError instanceof Error
               ? fetchError.message
-              : "Could not load your resume for file autofill.",
+              : "Could not load your resume for file autofill."
           );
           return;
         }
         if (fills.length === 0) {
           setQuickError(
-            "Nothing to apply for quick matches on this page with that profile (add profile values or upload a resume).",
+            "Nothing to apply for quick matches on this page with that profile (add profile values or upload a resume)."
           );
           return;
         }
@@ -260,13 +275,18 @@ export function DashboardPage({
           return;
         }
         setQuickNotice(
-          `Filled ${fills.length} field${fills.length === 1 ? "" : "s"} with ${profile.name}.`,
+          `Filled ${fills.length} field${fills.length === 1 ? "" : "s"} with ${profile.name}.`
         );
       } finally {
         setQuickApplyBusy(false);
       }
     },
-    [defaultResume, refreshScan, session],
+    [
+      accountOnboardingAnswers,
+      defaultResume,
+      refreshScan,
+      session,
+    ]
   );
 
   const handleSetDefaultProfile = useCallback(
@@ -281,11 +301,11 @@ export function DashboardPage({
         setQuickError(
           e instanceof Error
             ? e.message
-            : "Could not update default profile.",
+            : "Could not update default profile."
         );
       }
     },
-    [],
+    []
   );
 
   const handleDeleteProfile = useCallback(
@@ -303,11 +323,11 @@ export function DashboardPage({
         setQuickError(
           e instanceof Error
             ? e.message
-            : "Could not delete profile.",
+            : "Could not delete profile."
         );
       }
     },
-    [loadDashboard],
+    [loadDashboard]
   );
 
   const defaultPayload =
@@ -318,6 +338,7 @@ export function DashboardPage({
             email: session.user.email,
           },
           profile: defaultProfile,
+          accountOnboardingAnswers,
           resumeAttachment: defaultResume
             ? { label: defaultResume.label }
             : undefined,
@@ -335,8 +356,8 @@ export function DashboardPage({
         return true;
       }
       return (
-        valueForAutofillKind(defaultPayload!, f.kind).trim().length >
-        0
+        valueForAutofillKind(defaultPayload!, f.kind).trim()
+          .length > 0
       );
     });
 
@@ -374,12 +395,25 @@ export function DashboardPage({
         onScanTab={() => void refreshScan("refresh")}
       />
 
+      <div className="flex flex-wrap gap-2">
+        <button
+          type="button"
+          className="cursor-pointer rounded-[10px] border border-border bg-card px-3 py-2 text-xs font-medium hover:bg-muted/50"
+          onClick={() =>
+            void navigate({ to: "/jobs/save" })
+          }
+        >
+          Save this job
+        </button>
+      </div>
+
       <DashboardProfilesSection
         profiles={profiles}
         session={session}
         activeProfileId={activeProfileId}
         scanFields={scanFields}
         defaultResume={defaultResume}
+        accountOnboardingAnswers={accountOnboardingAnswers}
         isLoading={status === "loading"}
         error={error}
         applyBusy={quickApplyBusy}

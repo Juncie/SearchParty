@@ -90,11 +90,38 @@ function rawSignalValuesForScoring(
   ];
 }
 
+/**
+ * Bare `"name"` matches inside "first name" / "given name" / etc. That makes
+ * `fullName` tie or beat the specific first/last kinds when several signals
+ * stack. Skip the generic hit when a more specific name phrase is present.
+ */
+function shouldSkipGenericFullNamePhrase(
+  kind: AutofillFieldKind,
+  phrase: string,
+  value: string
+): boolean {
+  if (kind !== "fullName" || normalizeSignalValue(phrase) !== "name") {
+    return false;
+  }
+  return (
+    hasNormalizedPhrase(value, "first name") ||
+    hasNormalizedPhrase(value, "last name") ||
+    hasNormalizedPhrase(value, "given name") ||
+    hasNormalizedPhrase(value, "family name") ||
+    hasNormalizedPhrase(value, "preferred name") ||
+    hasNormalizedPhrase(value, "surname")
+  );
+}
+
 function scorePositivePhrase(
   signalKey: SignalKey,
   value: string,
-  phrase: string
+  phrase: string,
+  kind: AutofillFieldKind
 ): { score: number; reason: string | null } {
+  if (shouldSkipGenericFullNamePhrase(kind, phrase, value)) {
+    return { score: 0, reason: null };
+  }
   if (hasNormalizedPhrase(value, phrase)) {
     const exactBase = phrase.includes(" ") ? 76 : 68;
     return {
@@ -216,7 +243,8 @@ export function scoreAutofillField(
       const result = scorePositivePhrase(
         signalKey,
         value,
-        phrase
+        phrase,
+        kind
       );
       if (result.score > bestPositive.score) {
         bestPositive = result;

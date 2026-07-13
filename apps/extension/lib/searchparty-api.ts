@@ -451,3 +451,82 @@ export async function uploadResumeFromWizardFile(
     uploadStatus: "ready",
   };
 }
+
+/** Lists pending/reviewed résumé fact proposals for the signed-in user. */
+export async function listFactProposals(status?: string) {
+  const query = status ? `?status=${encodeURIComponent(status)}` : "";
+  return callSearchPartyEndpoint<{
+    proposals: import("@searchparty/shared").FactProposal[];
+  }>(`/api/fact-proposals/${query}`, { method: "GET" });
+}
+
+/** Approves, rejects, or edits a résumé fact proposal. */
+export async function reviewFactProposal(
+  proposalId: string,
+  body: import("@searchparty/shared").ReviewFactProposalInput,
+) {
+  return callSearchPartyEndpoint<{
+    proposal: import("@searchparty/shared").FactProposal;
+  }>(`/api/fact-proposals/${proposalId}`, {
+    method: "PATCH",
+    body: JSON.stringify(body),
+  });
+}
+
+/** Saves an extracted job posting for the signed-in user. */
+export async function saveJobPosting(
+  input: import("@searchparty/shared").JobExtractionInput,
+) {
+  return callSearchPartyEndpoint<{
+    job: import("@searchparty/shared").JobPosting;
+  }>("/api/jobs/", {
+    method: "POST",
+    body: JSON.stringify(input),
+  });
+}
+
+export async function listSavedJobs() {
+  return callSearchPartyEndpoint<
+    import("@searchparty/shared").JobPostingsResponse
+  >("/api/jobs/", { method: "GET" });
+}
+
+export async function createTrackedApplication(
+  input: import("@searchparty/shared").ApplicationInput,
+) {
+  return callSearchPartyEndpoint<{
+    application: import("@searchparty/shared").Application;
+  }>("/api/applications/", {
+    method: "POST",
+    body: JSON.stringify(input),
+  });
+}
+
+export async function listTrackedApplications() {
+  return callSearchPartyEndpoint<
+    import("@searchparty/shared").ApplicationsResponse
+  >("/api/applications/", { method: "GET" });
+}
+
+export async function generateEvidenceBoundDocument(
+  input: import("@searchparty/shared").GenerateDocumentInput,
+) {
+  return callSearchPartyEndpoint<{
+    document: import("@searchparty/shared").GeneratedDocument;
+  }>("/api/generation/", {
+    method: "POST",
+    body: JSON.stringify(input),
+  });
+}
+
+export async function reviewGeneratedDocument(
+  documentId: string,
+  body: { action: "approve" | "reject" | "edit"; content?: string },
+) {
+  return callSearchPartyEndpoint<{
+    document: import("@searchparty/shared").GeneratedDocument;
+  }>(`/api/generation/${documentId}`, {
+    method: "PATCH",
+    body: JSON.stringify(body),
+  });
+}

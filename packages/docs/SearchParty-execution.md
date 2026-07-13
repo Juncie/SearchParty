@@ -453,6 +453,8 @@ shipped extension runtime.
 
 ## Phase 4 — Job Extraction
 
+**Status:** implemented (MVP)
+
 ### Goals
 
 Extract structured job posting data.
@@ -486,6 +488,8 @@ Extract structured job posting data.
 User can save job postings from supported ATS pages.
 
 ## Phase 5 — Cover Letter Generation
+
+**Status:** in progress (evidence-bound deterministic drafts + approval API)
 
 ### Goals
 
@@ -552,6 +556,8 @@ Centralize resumes and generated docs.
 User can manage application documents.
 
 ## Phase 7 — Application Tracker
+
+**Status:** implemented (MVP APIs + schema)
 
 ### Goals
 

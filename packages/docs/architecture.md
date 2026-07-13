@@ -10,6 +10,9 @@ Start web app, a WXT browser extension scaffold, Better Auth wiring, Hono and
 tRPC API wiring, shared applicant profile contracts, and a Drizzle/PostgreSQL
 schema for auth plus applicant profiles.
 
+**Important Note**
+“AI fills in gaps” needs an important constraint: it must never invent personal facts."
+
 **Table of contents**
 
 - [Repository layout](#repository-layout)
@@ -88,21 +91,24 @@ lives under `packages/shared/src/autofill/`: **Fuse.js** backs fuzzy semantic
 matching from normalized DOM signals; modules cover normalization, field
 dictionary records, scoring, explainable candidates, confidence tiers, payload
 building from the signed-in user + active profile, content-script message type
-constants, and `ScannedAutofillFieldPayload`. The extension performs DOM
-extraction and interaction execution (`apps/extension/lib/autofill/`); runtime
-autofill uses normal DOM APIs, not Playwright (see **Form intelligence direction**
-below). Job posting, application, document, and AI domain models beyond autofill
-are still planned or partial.
+constants, and `ScannedAutofillFieldPayload`. Payload building reads confirmed
+`onboardingAnswers` for salary and education and formats structured
+`workExperiences` for work history — it never invents personal facts or treats
+`yearsExperience` as employment history. The extension performs DOM extraction
+and interaction execution (`apps/extension/lib/autofill/`); runtime autofill uses
+normal DOM APIs, not Playwright (see **Form intelligence direction** below). Job
+posting, application, document, and AI domain models beyond autofill are still
+planned or partial.
 
 **Planning sources** (product/engineering goals for the form engine, not a
 promise that every phase is shipped):
 
 - `plans/architecture-plan.md` — “advanced form interaction” vision: treat forms
-as interactive workflows, layered engine (extraction → classification →
-matching → confidence → execution → verification → domain memory), eventual
-combobox depth and Playwright-backed **test** harnesses.
+  as interactive workflows, layered engine (extraction → classification →
+  matching → confidence → execution → verification → domain memory), eventual
+  combobox depth and Playwright-backed **test** harnesses.
 - `plans/stack-upgrade.md` — concrete scope for Fuse.js-first matching,
-weighted signals, ambiguity handling, domain memory, and testing expectations.
+  weighted signals, ambiguity handling, domain memory, and testing expectations.
 
 `packages/data` is a workspace package (`@searchparty/data`) that publishes the
 typed onboarding catalog `profile-questions.ts` (grouped question flow for the web
@@ -151,11 +157,11 @@ verify local backend connectivity.
 - `pnpm-workspace.yaml` includes `apps/*` and `packages/*`.
 - Root scripts delegate to Turbo: `dev`, `build`, `test`, and `lint`.
 - `turbo.json` caches build outputs such as `dist/**`, `dist-ssr/**`,
-`.output/**`, and `.nitro/**`.
+  `.output/**`, and `.nitro/**`.
 - The root `tsconfig.json` uses strict TypeScript, ES2022, React JSX, bundler
-module resolution, and `noEmit`.
+  module resolution, and `noEmit`.
 - Formatting is handled by Prettier, including Tailwind class sorting through
-`prettier-plugin-tailwindcss`.
+  `prettier-plugin-tailwindcss`.
 
 ## Web Application
 
@@ -222,7 +228,7 @@ Implemented routes:
 - `/api/profiles` from `apps/web/src/routes/api/profiles/index.ts`
 - `/api/profiles/active` from `apps/web/src/routes/api/profiles/active.ts`
 - `/api/profiles/$profileId` from
-`apps/web/src/routes/api/profiles/$profileId.ts`
+  `apps/web/src/routes/api/profiles/$profileId.ts`
 - `/api/account` from `apps/web/src/routes/api/account.ts`
 - `/api/resumes` from `apps/web/src/routes/api/resumes/index.ts`
 - `/api/resumes/:resumeId` from `apps/web/src/routes/api/resumes/$resumeId.ts`
@@ -312,14 +318,14 @@ Server-side auth:
 
 - `betterAuth` enables email/password authentication.
 - `drizzleAdapter` persists auth users/sessions in PostgreSQL via
-`apps/web/src/db/index.ts`.
+  `apps/web/src/db/index.ts`.
 - `ensureAuthTablesReady()` checks for required Better Auth tables (`user`,
-`session`, `account`, `verification`) before serving auth requests.
+  `session`, `account`, `verification`) before serving auth requests.
 - `tanstackStartCookies` integrates auth cookies with TanStack Start.
 - `/api/auth/*` validates auth schema readiness and then forwards requests to
-`auth.handler`.
+  `auth.handler`.
 - Trusted origins are sourced from local web origins plus
-`BETTER_AUTH_TRUSTED_EXTENSION_ORIGINS` (comma-separated extension origins).
+  `BETTER_AUTH_TRUSTED_EXTENSION_ORIGINS` (comma-separated extension origins).
 
 Client-side auth:
 
@@ -340,42 +346,42 @@ Core files:
 
 - `packages/db/src/schema.ts` — Drizzle PostgreSQL table definitions
 - `packages/db/src/client.ts` — `createDb(databaseUrl)` factory using
-`drizzle-orm/node-postgres`
+  `drizzle-orm/node-postgres`
 - `packages/db/src/index.ts` — package exports (`createDb`, schema symbols)
 - `packages/db/drizzle.config.ts` — Drizzle Kit config; loads repo-root
-`.env.local` / `.env`, writes migrations to `packages/db/drizzle`
+  `.env.local` / `.env`, writes migrations to `packages/db/drizzle`
 - `apps/web/src/db/index.ts` — constructs `db` with `createDb(env.DATABASE_URL)`
 
 The current Drizzle schema defines PostgreSQL tables:
 
 - `**todos`: `id` (serial PK), `title` (text), `created_at` (timestamp, default now)
-- `**user`**: Better Auth user record (`id`, `name`, `email`, `email_verified`,
-`image`, created and updated timestamps)
+- `**user`\*\*: Better Auth user record (`id`, `name`, `email`, `email_verified`,
+  `image`, created and updated timestamps)
 - `**session**`: Better Auth session record (`token`, `expires_at`, `user_id`,
-metadata fields, timestamps)
+  metadata fields, timestamps)
 - `**account**`: Better Auth account/provider record, including password hash for
-email/password auth and optional token fields
+  email/password auth and optional token fields
 - `**verification**`: Better Auth verification records for one-time values and
-expiry windows
+  expiry windows
 - `**applicant_profiles**`: user-owned reusable applicant profiles with contact
-metadata (`first_name`, `last_name`, `phone`, address, outbound links), tone,
-summaries, timestamps, plus `onboarding_answers` (`jsonb`, default `{}`) that
-stores structured onboarding wizard answers for tooling/AI follow-up beyond the
-normalized columns embedded in applicant profile payloads
+  metadata (`first_name`, `last_name`, `phone`, address, outbound links), tone,
+  summaries, timestamps, plus `onboarding_answers` (`jsonb`, default `{}`) that
+  stores structured onboarding wizard answers for tooling/AI follow-up beyond the
+  normalized columns embedded in applicant profile payloads
 - `**work_experiences**`: profile-owned work history entries with descriptions,
-achievements, and technology stacks
+  achievements, and technology stacks
 - `**profile_skills**`: profile-owned skills with category and years of
-experience
+  experience
 - `**profile_projects**`: profile-owned portfolio projects with descriptions,
-technology stacks, and links
+  technology stacks, and links
 - `**user_profile_settings**`: per-user active applicant profile pointer plus
-global account setup fields (name, phone, structured mailing address, custom URLs)
-consumed by `/api/account`, augmented with `account_onboarding_answers` (`jsonb`,
-default `{}`) and nullable `account_onboarding_completed_at` to capture one-time
-eligibility onboarding that `/profile/new` runs before skipping to profile-only prompts
+  global account setup fields (name, phone, structured mailing address, custom URLs)
+  consumed by `/api/account`, augmented with `account_onboarding_answers` (`jsonb`,
+  default `{}`) and nullable `account_onboarding_completed_at` to capture one-time
+  eligibility onboarding that `/profile/new` runs before skipping to profile-only prompts
 - `**resumes**`: user-owned uploaded documents (`kind`, `storage_provider`, `storage_key`,
-`mime_type`, `size_bytes`, `checksum`, `upload_status` `pending` \| `ready`) backed by
-Cloudflare R2 via presigned S3-compatible URLs; migration `packages/db/drizzle/0007_resumes.sql`
+  `mime_type`, `size_bytes`, `checksum`, `upload_status` `pending` \| `ready`) backed by
+  Cloudflare R2 via presigned S3-compatible URLs; migration `packages/db/drizzle/0007_resumes.sql`
 
 Database CLI scripts are defined on `@searchparty/db` (`db:generate`, `db:migrate`,
 `db:push`, and so on). `apps/web` forwards the same script names via
@@ -386,7 +392,7 @@ Current caveats:
 
 - The tRPC todos API does not use the Drizzle tables yet.
 - Profile APIs currently replace nested work history, skills, and projects during
-profile updates instead of patching individual nested rows.
+  profile updates instead of patching individual nested rows.
 
 `apps/web/src/db-collections/index.ts` defines a TanStack React DB
 `messagesCollection` using `localOnlyCollectionOptions`. This is a browser-side
@@ -404,7 +410,7 @@ Implemented pieces:
 
 - Drizzle table `resumes` (`packages/db/src/schema.ts`, migration `0007_resumes.sql`).
 - Server adapter `apps/web/src/server/storage/r2-object-storage.ts` (S3 client,
-presigned URLs, `HeadObject` for finalize, `DeleteObject` on delete).
+  presigned URLs, `HeadObject` for finalize, `DeleteObject` on delete).
 - HTTP API (cookie session, same pattern as `/api/profiles`):
   - `GET /api/resumes` — list current user’s resume rows.
   - `POST /api/resumes` — create a `pending` row + presigned PUT payload `{ resumeId, uploadUrl, method, headers, expiresInSeconds }`.
@@ -446,117 +452,117 @@ Core stack:
 Entrypoints:
 
 - `apps/extension/entrypoints/background.ts` applies the saved toolbar-click
-behavior (`popup` or `sidepanel`) when the browser supports the Side Panel API.
+  behavior (`popup` or `sidepanel`) when the browser supports the Side Panel API.
 - `apps/extension/entrypoints/content.ts` matches the local web app only
-(foundation log).
+  (foundation log).
 - `apps/extension/entrypoints/autofill.content.ts` matches `http://*/*` and
-`https://*/*`, extracts field signals through `apps/extension/lib/autofill`,
-scores inputs with the Fuse-backed `@searchparty/shared` matcher, applies a
-small per-domain memory boost when available, tags controls with
-`data-searchparty-autofill-id`, runs an automatic scan after `DOMContentLoaded`
-(cached for reuse), and responds to panel messages:
-`SEARCHPARTY_AUTOFILL_GET_SCAN` (reuse cache or scan once),
-`SEARCHPARTY_AUTOFILL_SCAN` (force refresh), and `SEARCHPARTY_AUTOFILL_APPLY`.
-Runtime filling uses normal DOM APIs, not Playwright; Playwright remains a
-dev/test dependency for future browser automation harnesses.
+  `https://*/*`, extracts field signals through `apps/extension/lib/autofill`,
+  scores inputs with the Fuse-backed `@searchparty/shared` matcher, applies a
+  small per-domain memory boost when available, tags controls with
+  `data-searchparty-autofill-id`, runs an automatic scan after `DOMContentLoaded`
+  (cached for reuse), and responds to panel messages:
+  `SEARCHPARTY_AUTOFILL_GET_SCAN` (reuse cache or scan once),
+  `SEARCHPARTY_AUTOFILL_SCAN` (force refresh), and `SEARCHPARTY_AUTOFILL_APPLY`.
+  Runtime filling uses normal DOM APIs, not Playwright; Playwright remains a
+  dev/test dependency for future browser automation harnesses.
 - `apps/extension/entrypoints/popup/main.tsx` mounts `SearchPartyPanel` with the
-popup surface.
+  popup surface.
 - `apps/extension/entrypoints/sidepanel/main.tsx` mounts `SearchPartyPanel` with
-the side panel surface.
+  the side panel surface.
 - `apps/extension/entrypoints/autofill-test-form/` is an unlisted HTML page
-(`autofill-test-form.html` in the build output) with a generic job application
-form for manual autofill testing. Because Chrome does not inject autofill
-content scripts on `chrome-extension://` pages, run
-`pnpm --filter search-party-extension serve:test-form` and open
-`http://localhost:7242/autofill-test-form.html` with the extension loaded.
+  (`autofill-test-form.html` in the build output) with a generic job application
+  form for manual autofill testing. Because Chrome does not inject autofill
+  content scripts on `chrome-extension://` pages, run
+  `pnpm --filter search-party-extension serve:test-form` and open
+  `http://localhost:7242/autofill-test-form.html` with the extension loaded.
 - `apps/extension/components/SearchPartyPanel.tsx` owns the memory-backed
-TanStack Router for popup and side panel surfaces. It defines `/login`,
-`/dashboard`, `/autofill`, `/profiles/new`, `/profiles/$profileId`, and
-`/settings`.
+  TanStack Router for popup and side panel surfaces. It defines `/login`,
+  `/dashboard`, `/autofill`, `/profiles/new`, `/profiles/$profileId`, and
+  `/settings`.
 - `apps/extension/components/navigation/BottomNav.tsx` renders the extension’s
-primary bottom tab bar (`/dashboard`, `/autofill`, `/settings`) on every
-route, fixed to the bottom of the panel viewport and full width, with an
-active-tab highlight when the current path matches a tab; `SearchPartyPanel`
-pads the scroll outlet so content clears the bar.
+  primary bottom tab bar (`/dashboard`, `/autofill`, `/settings`) on every
+  route, fixed to the bottom of the panel viewport and full width, with an
+  active-tab highlight when the current path matches a tab; `SearchPartyPanel`
+  pads the scroll outlet so content clears the bar.
 - `apps/extension/components/AppRouter.tsx` remains as a compatibility wrapper
-for generated WXT auto-import metadata and delegates to `SearchPartyPanel`.
+  for generated WXT auto-import metadata and delegates to `SearchPartyPanel`.
 - `apps/extension/components/screens/LoginPage.tsx` renders the logo-backed
-login screen.
+  login screen.
 - `apps/extension/components/screens/DashboardPage.tsx` renders the personalized
-authenticated dashboard with Quick Apply (default profile, high-confidence
-fields only), minimal profile rows (Apply, overflow menu for default/edit/delete),
-profile creation, settings, and sign out.
+  authenticated dashboard with Quick Apply (default profile, high-confidence
+  fields only), minimal profile rows (Apply, overflow menu for default/edit/delete),
+  profile creation, settings, and sign out.
 - `apps/extension/components/screens/ProfileEditPage.tsx` renders the dedicated
-edit-profile route using `ProfileEditor`, plus an autofill panel (scan, tier
-preview, prominent apply) for an existing profile. The create flow now routes
-to `ProfileSetupPage` instead.
+  edit-profile route using `ProfileEditor`, plus an autofill panel (scan, tier
+  preview, prominent apply) for an existing profile. The create flow now routes
+  to `ProfileSetupPage` instead.
 - `apps/extension/components/screens/ProfileSetupPage.tsx` owns `/profiles/new`
-and renders the multi-step onboarding wizard from
-`apps/extension/components/profile-setup/*`. On submit it calls
-`markAccountOnboardingComplete` (only for the user's first profile) followed
-by `createApplicantProfile`, then navigates to the new profile's edit route.
+  and renders the multi-step onboarding wizard from
+  `apps/extension/components/profile-setup/*`. On submit it calls
+  `markAccountOnboardingComplete` (only for the user's first profile) followed
+  by `createApplicantProfile`, then navigates to the new profile's edit route.
 - `apps/extension/components/profile-setup/` ports the wizard primitives
-(`ProfileSetupWizard`, `QuestionField`, `StepHeader`, `WizardProgress`,
-`WizardFooter`) and helpers (`payload-from-answers`, `question-validation`)
-consumed by `ProfileSetupPage`. The catalog comes from
-`@searchparty/data/profile-questions`. The wizard’s optional résumé step
-(`resumeUpload`) runs the same presign → PUT to object storage → finalize flow
-as `/api/resumes` via `uploadResumeFromWizardFile` in
-`apps/extension/lib/searchparty-api.ts` (shared orchestration in
-`packages/shared/src/resume-presigned-upload.ts`).
+  (`ProfileSetupWizard`, `QuestionField`, `StepHeader`, `WizardProgress`,
+  `WizardFooter`) and helpers (`payload-from-answers`, `question-validation`)
+  consumed by `ProfileSetupPage`. The catalog comes from
+  `@searchparty/data/profile-questions`. The wizard’s optional résumé step
+  (`resumeUpload`) runs the same presign → PUT to object storage → finalize flow
+  as `/api/resumes` via `uploadResumeFromWizardFile` in
+  `apps/extension/lib/searchparty-api.ts` (shared orchestration in
+  `packages/shared/src/resume-presigned-upload.ts`).
 - `apps/extension/components/screens/SettingsPage.tsx` renders theme, layout,
-display-name, connection, and account-deletion settings.
+  display-name, connection, and account-deletion settings.
 - `apps/extension/components/profiles/ProfileEditor.tsx` provides the reusable
-profile form for application autofill contact fields, work history, skills,
-and projects.
+  profile form for application autofill contact fields, work history, skills,
+  and projects.
 - `apps/extension/components/screens/AutofillPage.tsx` loads a cached scan on
-open, supports manual refresh, previews mapped values and confidence tiers, and
-applies selected fills.
+  open, supports manual refresh, previews mapped values and confidence tiers, and
+  applies selected fills.
 - `apps/extension/components/ui/*` stores shadcn/ui primitives generated for the
-extension app (starting with `button.tsx`).
+  extension app (starting with `button.tsx`).
 - `apps/extension/lib/profile-quick-starts.ts` defines five general
-quick-start profile templates (Full Stack Engineer, Graphic Designer,
-Customer Service Representative, Sales, and Operations Coordinator).
+  quick-start profile templates (Full Stack Engineer, Graphic Designer,
+  Customer Service Representative, Sales, and Operations Coordinator).
 - `apps/extension/lib/extension-preferences.ts` persists extension theme and
-toolbar open behavior in `browser.storage.local`.
+  toolbar open behavior in `browser.storage.local`.
 - `apps/extension/lib/searchparty-api.ts` calls the web app health endpoint,
-Better Auth endpoints (`sign-up`, `sign-in`, `get-session`, `sign-out`),
-authenticated profile endpoints, and `/api/user/me` over HTTP with cookie
-credentials. It maps common failures (invalid origin, missing auth tables,
-unreachable web app) to user-friendly messages.
+  Better Auth endpoints (`sign-up`, `sign-in`, `get-session`, `sign-out`),
+  authenticated profile endpoints, and `/api/user/me` over HTTP with cookie
+  credentials. It maps common failures (invalid origin, missing auth tables,
+  unreachable web app) to user-friendly messages.
 - `apps/extension/lib/autofill/extractDomFields.ts` collects labels,
-`aria-labelledby` text, nearby text, form/fieldset context, select and radio
-options, interaction type, visibility/required/disabled/checked state, and a
-best-effort CSS selector path. It scans text inputs, textareas, native
-selects, checkboxes, radios, file inputs, and upload/listbox-style buttons. It
-walks open shadow roots, but cross-origin iframe scanning is still limited by
-the browser extension manifest and frame permissions.
+  `aria-labelledby` text, nearby text, form/fieldset context, select and radio
+  options, interaction type, visibility/required/disabled/checked state, and a
+  best-effort CSS selector path. It scans text inputs, textareas, native
+  selects, checkboxes, radios, file inputs, and upload/listbox-style buttons. It
+  walks open shadow roots, but cross-origin iframe scanning is still limited by
+  the browser extension manifest and frame permissions.
 - `apps/extension/lib/autofill/executeAutofill.ts` applies selected values
-safely: it skips non-empty fields unless explicitly told to overwrite, fills
-text/textarea controls through the native value setter, selects native options
-by normalized label/value, can set checkbox state from an explicit boolean
-value, dispatches `input`, `change`, and `blur` events, and returns per-field
-verification results. **Resume `<input type="file">` controls** matched as
-`resume` receive a synthetic `File`: the side panel sends only the short-lived
-presigned GET URL from `/api/resumes/:id` plus a filename over `tabs.sendMessage`;
-the **service worker** `fetch`es the bytes (host_permissions + `RESUME_AUTOFILL_MAX_BYTES`),
-then the content script asks the worker to run `chrome.scripting.executeScript` in the
-page **MAIN** world to assign a `File` via `DataTransfer` and dispatch events (so React /
-ATS page JS can observe the change). If that step is unavailable, it falls back to the
-isolated content-script world. Vitest falls back to content `fetch` when messaging is
-unavailable. A `data:` URL fill remains supported for tests.
-Radios, custom comboboxes, other file kinds, generated cover letters, salary,
-work history, and education remain manual or unsupported where the payload model
-does not supply values.
+  safely: it skips non-empty fields unless explicitly told to overwrite, fills
+  text/textarea controls through the native value setter, selects native options
+  by normalized label/value, can set checkbox state from an explicit boolean
+  value, dispatches `input`, `change`, and `blur` events, and returns per-field
+  verification results. **Resume `<input type="file">` controls** matched as
+  `resume` receive a synthetic `File`: the side panel sends only the short-lived
+  presigned GET URL from `/api/resumes/:id` plus a filename over `tabs.sendMessage`;
+  the **service worker** `fetch`es the bytes (host_permissions + `RESUME_AUTOFILL_MAX_BYTES`),
+  then the content script asks the worker to run `chrome.scripting.executeScript` in the
+  page **MAIN** world to assign a `File` via `DataTransfer` and dispatch events (so React /
+  ATS page JS can observe the change). If that step is unavailable, it falls back to the
+  isolated content-script world. Vitest falls back to content `fetch` when messaging is
+  unavailable. A `data:` URL fill remains supported for tests.
+  Radios, custom comboboxes, other file kinds, generated cover letters, salary,
+  work history, and education remain manual or unsupported where the payload model
+  does not supply values.
 - `apps/extension/lib/autofill/domainMemory.ts` stores successful user-applied
-matches in `browser.storage.local` by origin and selector. Memory boosts a
-future scan score, but does not override strong contradictory field signals.
+  matches in `browser.storage.local` by origin and selector. Memory boosts a
+  future scan score, but does not override strong contradictory field signals.
 - `apps/extension/lib/utils.ts` exposes the shared `cn()` helper used by
-shadcn/ui components.
+  shadcn/ui components.
 - `apps/extension/components.json` is the shadcn/ui config for extension-local
-generation and alias resolution.
+  generation and alias resolution.
 - `apps/extension/postcss.config.mjs` enables Tailwind CSS v4 processing for
-extension stylesheets.
+  extension stylesheets.
 
 `apps/extension/wxt.config.ts` enables the React module, declares MV3 side panel
 metadata, requests `sidePanel`, `storage`, `tabs`, and `scripting`, and grants host access to
@@ -601,10 +607,10 @@ Declared variables:
 - Server: `SERVER_URL`, optional URL
 - Server: `DATABASE_URL`, optional URL
 - Server (optional): `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`
-or `R2_API_TOKEN`, `R2_BUCKET_NAME` — required for resume upload/download/delete
-endpoints; when unset, those routes respond with `503` and a configuration message
+  or `R2_API_TOKEN`, `R2_BUCKET_NAME` — required for resume upload/download/delete
+  endpoints; when unset, those routes respond with `503` and a configuration message
 - Better Auth runtime: `BETTER_AUTH_URL`, `BETTER_AUTH_SECRET`,
-`BETTER_AUTH_TRUSTED_EXTENSION_ORIGINS`
+  `BETTER_AUTH_TRUSTED_EXTENSION_ORIGINS`
 - Client: `VITE_APP_TITLE`, optional non-empty string
 
 ## External Integrations
@@ -615,21 +621,21 @@ Implemented or configured integrations:
 - Hono for backend HTTP routing inside the web app
 - PostgreSQL through `@searchparty/db` (`pg` + Drizzle ORM)
 - Cloudflare R2 via `@aws-sdk/client-s3` and `@aws-sdk/s3-request-presigner` in
-`apps/web` (resume presigned URLs)
+  `apps/web` (resume presigned URLs)
 - **Fuse.js** (`fuse.js`) in `@searchparty/shared` for autofill dictionary /
-candidate scoring (not used in the web app bundle directly today).
+  candidate scoring (not used in the web app bundle directly today).
 - Shared Fontsource variable fonts (`DM Sans` and `Outfit`) imported from
-`packages/ui/src/styles/theme.css` and resolved from root dependencies
+  `packages/ui/src/styles/theme.css` and resolved from root dependencies
 
 Dependencies present but not yet wired into visible product flows:
 
 - TanStack AI provider packages for Anthropic, Gemini, Ollama, and OpenAI
 - **Playwright** is a **development dependency** of `apps/extension`
-(`playwright` in `apps/extension/package.json`). It is intended for future
-browser automation tests or harnesses (for example validating autofill
-against real pages). It is **not** part of the shipped extension runtime.
+  (`playwright` in `apps/extension/package.json`). It is intended for future
+  browser automation tests or harnesses (for example validating autofill
+  against real pages). It is **not** part of the shipped extension runtime.
 - Sentry is not installed, but `vite.config.ts` marks `@sentry/` as external
-in Nitro's Rollup config
+  in Nitro's Rollup config
 
 ## Shared Package
 
@@ -640,19 +646,19 @@ Current exports include:
 - `SEARCHPARTY_APP`: shared app metadata and the local web development URL.
 - Health-check schema/types and `createHealthResponse()`.
 - Applicant profile Zod schemas and TypeScript types (including optional contact
-fields used for autofill: first/last name overrides, phone, address, LinkedIn,
-GitHub, portfolio URLs).
+  fields used for autofill: first/last name overrides, phone, address, LinkedIn,
+  GitHub, portfolio URLs).
 - **Autofill** (`packages/shared/src/autofill/`): normalization
-(`normalizeFieldSignals.ts`), dictionary (`fieldDictionary.ts`), scoring
-(`scoreAutofillField.ts`, `getAutofillCandidates.ts`), confidence
-(`confidence.ts`), payloads (`payload.ts`), message constants (`messages.ts`),
-types (`types.ts`). Public API includes `matchDomFieldToAutofill` for legacy
-callers, `matchDomFieldToAutofillDetailed` for explainable candidates,
-`confidenceScoreToTier`, `buildAutofillPayloadValues`, `valueForAutofillKind`,
-scan/apply message type constants, execution option types, and
-`ScannedAutofillFieldPayload`.
+  (`normalizeFieldSignals.ts`), dictionary (`fieldDictionary.ts`), scoring
+  (`scoreAutofillField.ts`, `getAutofillCandidates.ts`), confidence
+  (`confidence.ts`), payloads (`payload.ts`), message constants (`messages.ts`),
+  types (`types.ts`). Public API includes `matchDomFieldToAutofill` for legacy
+  callers, `matchDomFieldToAutofillDetailed` for explainable candidates,
+  `confidenceScoreToTier`, `buildAutofillPayloadValues`, `valueForAutofillKind`,
+  scan/apply message type constants, execution option types, and
+  `ScannedAutofillFieldPayload`.
 - Vitest unit tests under `packages/shared/src/autofill/__tests__/` (for example
-`scoring.test.ts`; `pnpm --filter @searchparty/shared test`).
+  `scoring.test.ts`; `pnpm --filter @searchparty/shared test`).
 
 Job postings, applications, documents, and AI generation contracts are still
 planned or minimal beyond autofill.
@@ -716,26 +722,26 @@ pnpm --filter search-party-extension build
 Quick review of root `pnpm dev` behavior and local port wiring:
 
 - Root `pnpm dev` runs `turbo dev`, which starts every workspace package with a
-`dev` script (`apps/web` and `apps/extension` in the current repo).
+  `dev` script (`apps/web` and `apps/extension` in the current repo).
 - `apps/web/package.json` runs Vite with `--port 3001 --strictPort`.
 - The extension and shared package target the same origin:
   - `apps/extension/wxt.config.ts` host permissions:
-  `http://localhost:3001/*`
+    `http://localhost:3001/*`
   - `apps/extension/entrypoints/content.ts` matches the local web app URL (same
-  host/port as above).
+    host/port as above).
   - `packages/shared/src/index.ts` `SEARCHPARTY_APP.webDevUrl`:
-  `http://localhost:3001`
+    `http://localhost:3001`
 - `strictPort` is enabled for web dev, so startup fails fast when `3001` is in
-use instead of silently switching ports.
+  use instead of silently switching ports.
 
 Operational notes:
 
 1. Keep `SEARCHPARTY_APP.webDevUrl`, extension `host_permissions`, and the web
-  dev port aligned when changing local URLs.
+   dev port aligned when changing local URLs.
 2. Optional: add root scripts such as `dev:web` / `dev:extension` if you want
-  one-app dev without full `turbo dev`.
+   one-app dev without full `turbo dev`.
 3. If `3001` is occupied, free the port or update the shared dev URL consistently
-  across web, extension, and `packages/shared`.
+   across web, extension, and `packages/shared`.
 
 Testing and quality tools:
 
@@ -744,8 +750,8 @@ Testing and quality tools:
 - Web app linting uses ESLint with TanStack's ESLint config.
 - Extension type checking uses `tsc --noEmit` through the `compile` script.
 
-No CI configuration is present under `.github/` in the current repository
-snapshot.
+CI lives at `.github/workflows/ci.yml` and runs lint, tests, extension compile,
+and shared/db typecheck on pull requests and main-branch pushes.
 
 ## Generated Files And Outputs
 
@@ -765,30 +771,31 @@ Current implemented security mechanisms:
 - `tanstackStartCookies` integrates auth cookies into TanStack Start.
 - Client-exposed environment variables must use the `VITE_` prefix.
 - The extension grants host access to the local web app URL and to `http://*/*`
-and `https://*/*` for the autofill content script (review before production
-store submission).
+  and `https://*/*` for the autofill content script (review before production
+  store submission).
 
 Security gaps to address before production:
 
 - Configure durable Better Auth persistence explicitly.
 - Validate auth secrets through the central env schema.
 - Continue hardening authorization boundaries for documents, generated answers,
-and application history.
+  and application history.
 - Formalize extension-to-web authentication for production beyond local Better
-Auth cookie development.
+  Auth cookie development.
 - Preserve the MVP rule that the extension should not auto-submit applications.
 
 ## Known Architectural Gaps
 
-- Shared domain contracts now exist for applicant profiles; job, document, and
-application contracts are still planned.
-- The web UI is still a foundation landing route.
-- The browser extension can manage applicant profiles and run a Phase 3
-autofill MVP (scan, preview by confidence tier, apply selected fields).
-Deeper application workflows (job extraction, tracker, AI) are not wired yet.
+- Shared domain contracts now exist for applicant profiles, jobs, applications,
+  résumé proposals, and evidence-bound generation drafts.
+- The web UI remains thin beyond onboarding and the `/proposals` review queue.
+- The browser extension manages applicant profiles, Phase 3 autofill, and job
+  save (`/jobs/save`). Application tracker and generation UIs are API-first.
 - tRPC stores todos in memory while Drizzle defines a PostgreSQL `todos` table.
-- AI dependencies are installed, but AI generation workflows are not
-implemented.
+- AI provider packages are installed; generation currently uses a deterministic
+  evidence-bound draft path until a server-only model adapter is configured.
+- Run migration `0008_provenance_jobs_applications.sql` before using the new
+  tables in a live database.
 
 ## Architecture Readiness For Extension UI
 
@@ -797,19 +804,60 @@ Architecture is sufficient to begin a beginner extension UI.
 Ready now:
 
 - Monorepo boundaries are clear (`apps/web`, `apps/extension`, `packages/shared`,
-`packages/db` for server-side persistence).
+  `packages/db` for server-side persistence).
 - Extension shell exists (popup + side panel + background + content scripts).
 - Shared package provides cross-app contracts for health checks and applicant
-profiles.
+  profiles.
 
 Do next before/while UI work continues:
 
 - Keep local web URL/port changes synchronized across web, extension, and shared.
 - Keep profile and autofill-related columns synchronized across
-`packages/shared`, `packages/db` migrations, web `/api/profiles`, and
-extension profile + autofill UIs.
+  `packages/shared`, `packages/db` migrations, web `/api/profiles`, and
+  extension profile + autofill UIs.
 - Tighten extension host permissions toward supported ATS origins when Phase 4
-job extraction lands.
+  job extraction lands.
+
+## Product data contract (facts, preferences, narratives)
+
+SearchParty treats applicant data in three categories:
+
+- **Facts** — identity, authorization, employment, education, skills. Only
+  user-entered or explicitly approved facts may be used for autofill.
+- **Preferences** — salary, target roles, location, availability. User decisions;
+  AI may recommend but never silently decide.
+- **Narratives** — cover letters and open-ended answers. AI may draft from
+  approved evidence; users must review before reuse or autofill.
+
+Autofill keeps **two independent signals**: field confidence (what the page
+asks) and answer trust (confirmed vs draft). Only strong field matches with
+confirmed answers are eligible for automatic selection. SearchParty fills forms
+but never submits applications.
+
+Shared packages cover:
+
+- `packages/shared/src/answers/` — provenance, approval, deterministic resolver
+- `packages/shared/src/jobs/` — job posting contracts
+- `packages/shared/src/applications/` — tracker statuses and transitions
+- `packages/shared/src/generation/` — evidence-bound draft helpers and
+  hallucination guards
+- `packages/shared/src/resume-extraction.ts` — proposal schemas
+- `packages/shared/src/metrics/autofill-metrics.ts` — privacy-safe metrics
+
+PostgreSQL tables (migration `0008_provenance_jobs_applications.sql`) add
+`profile_education`, `profile_document_links`, `document_extractions`,
+`fact_proposals`, `job_postings`, `applications`, `application_events`,
+`generated_documents`, `custom_answers`, and `generation_runs`.
+
+Web APIs:
+
+- `/api/fact-proposals` — list / extract / review résumé proposals
+- `/api/jobs` — save and list job postings
+- `/api/applications` — track applications (status never inferred from fill alone)
+- `/api/generation` — evidence-bound draft generation and approval
+
+The extension exposes `/jobs/save` for extract-and-save. The web app exposes
+`/proposals` for reviewing pending résumé facts.
 
 ## Product Roadmap Context
 
@@ -818,25 +866,27 @@ The documented MVP direction is a job application assistant with:
 - Applicant profiles for different career paths
 - Resume and cover letter variants
 - Safe autofill assistance in the browser extension, evolving toward the **form
-intelligence** goals in `plans/architecture-plan.md` and
-`plans/stack-upgrade.md` (reliable classification, fuzzy matching, explainable
-confidence, verified interactions—without “magic” auto-behavior)
+  intelligence** goals in `plans/architecture-plan.md` and
+  `plans/stack-upgrade.md` (reliable classification, fuzzy matching, explainable
+  confidence, verified interactions—without “magic” auto-behavior)
 - AI-generated cover letters, resume tailoring, and reusable answers
 - Application tracking with saved jobs, notes, generated documents, and answers
 
 MVP non-goals include bulk auto-apply, auto-submission, bypassing ATS
-protections, guaranteed ATS scores, and fabricated credentials.
+protections, guaranteed ATS scores, and fabricated credentials. Onboarding no
+longer offers auto-submit; SearchParty prepares and fills, and the user always
+submits.
 
 Likely next architecture steps:
 
 - Add shared contracts for job postings, applications, documents, generated
-answers, and autofill field mappings.
+  answers, and autofill field mappings.
 - Persist applications, documents, and generated answers in PostgreSQL.
 - Replace demo tRPC procedures with database-backed routers.
 - Define a production auth/session strategy shared by the web app and extension.
 - Add AI service boundaries for generation providers and prompt workflows.
 - Expand automated testing around autofill (Vitest today; Playwright available for
-future integration or e2e harnesses per extension `package.json`).
+  future integration or e2e harnesses per extension `package.json`).
 - Add CI for type checking, linting, tests, and builds.
 
 ## Project Identification
@@ -846,10 +896,10 @@ future integration or e2e harnesses per extension `package.json`).
 - Primary applications: `apps/web` and `apps/extension`
 - Documentation location: `packages/docs`
 - Supplementary execution/product phases: `packages/docs/SearchParty-execution.md`,
-`packages/docs/SearchParty-overview.md`
+  `packages/docs/SearchParty-overview.md`
 - Planning (form engine goals / stack upgrade scope): `plans/architecture-plan.md`,
-`plans/stack-upgrade.md`
-- Last architecture update: 2026-05-14
+  `plans/stack-upgrade.md`
+- Last architecture update: 2026-07-12
 
 ## Glossary
 
@@ -861,4 +911,3 @@ future integration or e2e harnesses per extension `package.json`).
 - TanStack Start: Full-stack React framework used by the web app.
 - tRPC: Type-safe API layer used by the web app.
 - WXT: Browser extension framework used by the extension app.
-

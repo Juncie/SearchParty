@@ -42,6 +42,7 @@ export interface DashboardProfileRowProps {
     label: string;
     mimeType: string;
   } | null;
+  accountOnboardingAnswers?: Record<string, unknown>;
   /** When true, this row’s profile actions menu is open (controlled by the parent list). */
   actionsMenuOpen: boolean;
   onActionsMenuOpenChange: (open: boolean) => void;
@@ -58,6 +59,7 @@ export function DashboardProfileRow({
   isDefault,
   scanFields,
   defaultResume,
+  accountOnboardingAnswers = {},
   actionsMenuOpen,
   onActionsMenuOpenChange,
   onEdit,
@@ -68,8 +70,11 @@ export function DashboardProfileRow({
 }: DashboardProfileRowProps) {
   const actionsMenuId = useId();
   const actionsRootRef = useRef<HTMLDivElement>(null);
-  const onActionsMenuOpenChangeRef = useRef(onActionsMenuOpenChange);
-  onActionsMenuOpenChangeRef.current = onActionsMenuOpenChange;
+  const onActionsMenuOpenChangeRef = useRef(
+    onActionsMenuOpenChange
+  );
+  onActionsMenuOpenChangeRef.current =
+    onActionsMenuOpenChange;
 
   useEffect(() => {
     if (!actionsMenuOpen) {
@@ -77,7 +82,9 @@ export function DashboardProfileRow({
     }
     const handlePointerDown = (event: PointerEvent) => {
       if (
-        actionsRootRef.current?.contains(event.target as Node)
+        actionsRootRef.current?.contains(
+          event.target as Node
+        )
       ) {
         return;
       }
@@ -88,15 +95,22 @@ export function DashboardProfileRow({
         onActionsMenuOpenChangeRef.current(false);
       }
     };
-    document.addEventListener("pointerdown", handlePointerDown, true);
+    document.addEventListener(
+      "pointerdown",
+      handlePointerDown,
+      true
+    );
     document.addEventListener("keydown", handleKeyDown);
     return () => {
       document.removeEventListener(
         "pointerdown",
         handlePointerDown,
-        true,
+        true
       );
-      document.removeEventListener("keydown", handleKeyDown);
+      document.removeEventListener(
+        "keydown",
+        handleKeyDown
+      );
     };
   }, [actionsMenuOpen]);
 
@@ -108,6 +122,7 @@ export function DashboardProfileRow({
             email: session.user.email,
           },
           profile,
+          accountOnboardingAnswers,
           resumeAttachment: defaultResume
             ? { label: defaultResume.label }
             : undefined,
@@ -125,8 +140,8 @@ export function DashboardProfileRow({
             return true;
           }
           return (
-            valueForAutofillKind(payload, f.kind).trim().length >
-            0
+            valueForAutofillKind(payload, f.kind).trim()
+              .length > 0
           );
         }).length
       : 0;
@@ -134,11 +149,11 @@ export function DashboardProfileRow({
   const metaParts: string[] = [];
   if (scanFields.length > 0 && payload) {
     metaParts.push(
-      `${filledQuickCount}/${quickApplyFields(scanFields).length} quick values`,
+      `${filledQuickCount}/${quickApplyFields(scanFields).length} quick values`
     );
   } else if (scanFields.length > 0) {
     metaParts.push(
-      `${quickApplyFields(scanFields).length} quick fields`,
+      `${quickApplyFields(scanFields).length} quick fields`
     );
   }
 
@@ -155,7 +170,7 @@ export function DashboardProfileRow({
     (event: MouseEvent) => {
       event.stopPropagation();
     },
-    [],
+    []
   );
 
   return (
@@ -163,7 +178,7 @@ export function DashboardProfileRow({
       className={cn(
         "flex items-center gap-2 rounded-lg border border-border bg-card/70 px-2 py-2 transition-colors @container/row",
         "hover:bg-card",
-        isDefault && "ring-1 ring-primary/50",
+        isDefault && "ring-1 ring-primary/50"
       )}
     >
       <button
@@ -172,10 +187,7 @@ export function DashboardProfileRow({
         onClick={() => void handleRowActivate()}
       >
         <span className="mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-md bg-muted text-muted-foreground">
-          <Briefcase
-            className="size-4"
-            aria-hidden
-          />
+          <Briefcase className="size-4" aria-hidden />
         </span>
         <span className="min-w-0 flex-1 space-y-0.5">
           <span className="flex flex-wrap items-center gap-2">
@@ -227,21 +239,20 @@ export function DashboardProfileRow({
           className={cn(
             "flex size-8 cursor-pointer items-center justify-center rounded-md border border-transparent text-muted-foreground outline-none transition-colors",
             "hover:bg-muted hover:text-foreground",
-            "focus-visible:ring-1 focus-visible:ring-ring/40",
+            "focus-visible:ring-1 focus-visible:ring-ring/40"
           )}
           aria-label="Profile actions"
           aria-haspopup="menu"
           aria-expanded={actionsMenuOpen}
-          aria-controls={actionsMenuOpen ? actionsMenuId : undefined}
+          aria-controls={
+            actionsMenuOpen ? actionsMenuId : undefined
+          }
           onClick={(event) => {
             stopRowNavigation(event);
             onActionsMenuOpenChange(!actionsMenuOpen);
           }}
         >
-          <MoreVertical
-            className="size-4"
-            aria-hidden
-          />
+          <MoreVertical className="size-4" aria-hidden />
         </button>
         {actionsMenuOpen ? (
           <div
@@ -258,7 +269,7 @@ export function DashboardProfileRow({
                 "flex w-full items-center gap-2 px-3 py-2 text-left text-xs transition-colors",
                 isDefault
                   ? "cursor-not-allowed text-muted-foreground"
-                  : "cursor-pointer text-foreground hover:bg-muted",
+                  : "cursor-pointer text-foreground hover:bg-muted"
               )}
               onClick={() => {
                 onActionsMenuOpenChange(false);
@@ -270,11 +281,13 @@ export function DashboardProfileRow({
                   "size-3.5 shrink-0",
                   isDefault
                     ? "fill-primary text-primary"
-                    : "fill-transparent",
+                    : "fill-transparent"
                 )}
                 aria-hidden
               />
-              {isDefault ? "Default profile" : "Set as default"}
+              {isDefault
+                ? "Default profile"
+                : "Set as default"}
             </button>
             <button
               type="button"

@@ -349,23 +349,19 @@ export const profileQuestionGroups: readonly ProfileQuestionGroup[] = [
   {
     id: "automation",
     title: "How Search Party helps",
+    description:
+      "SearchParty prepares and fills applications; you always review and submit.",
     showOn: "newProfile",
     questions: [
       {
-        field: "allowAutoApply",
-        question: "Let the assistant submit applications automatically?",
-        type: "radio",
-        options: YES_NO,
-        required: true,
-      },
-      {
         field: "applicationReviewPreference",
-        question: "When should we pause for your review?",
+        question: "When should we pause for your review before filling?",
+        helper:
+          "SearchParty never submits applications. You stay in control of the final click.",
         type: "radio",
         options: [
           "Always review first",
           "Only for low-confidence matches",
-          "No, auto-submit for me",
         ],
         required: true,
       },

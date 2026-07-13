@@ -221,4 +221,11 @@ export type AccountSetupResponse = z.infer<typeof accountSetupResponseSchema>;
 
 export * from "./resume-documents";
 export * from "./resume-presigned-upload";
+export * from "./resume-extraction";
+export * from "./resume-extract-text";
 export * from "./autofill/index";
+export * from "./answers/index";
+export * from "./jobs/index";
+export * from "./applications/index";
+export * from "./generation/index";
+export * from "./metrics/autofill-metrics";

@@ -194,6 +194,23 @@ function applyContextualTieBreaker(
   return candidates.map((candidate) => {
     if (
       candidate.kind === "fullName" &&
+      (hasNormalizedPhrase(text, "first name") ||
+        hasNormalizedPhrase(text, "given name") ||
+        hasNormalizedPhrase(text, "last name") ||
+        hasNormalizedPhrase(text, "family name") ||
+        hasNormalizedPhrase(text, "surname"))
+    ) {
+      return {
+        ...candidate,
+        score: Math.max(0, candidate.score - 40),
+        penalties: [
+          ...candidate.penalties,
+          "specific first/last name wording should not use fullName",
+        ],
+      };
+    }
+    if (
+      candidate.kind === "fullName" &&
       (hasNormalizedPhrase(text, "full name") ||
         hasNormalizedPhrase(text, "legal name") ||
         hasNormalizedPhrase(text, "applicant name"))
@@ -300,9 +317,22 @@ export function getAutofillCandidates(
 
   const withAutocomplete = autocomplete
     ? candidates.map((candidate) =>
-      candidate.kind === autocomplete.kind &&
-        autocomplete.score >= candidate.score
-        ? autocomplete
+      candidate.kind === autocomplete.kind
+        ? {
+          ...autocomplete,
+          score: Math.max(
+            autocomplete.score,
+            candidate.score,
+          ),
+          reasons:
+            candidate.score > autocomplete.score
+              ? [
+                ...autocomplete.reasons,
+                ...candidate.reasons,
+              ]
+              : autocomplete.reasons,
+          penalties: candidate.penalties,
+        }
         : candidate
     )
     : candidates;
@@ -315,7 +345,22 @@ export function getAutofillCandidates(
     tieBroken,
     signals
   );
-  return resolved.sort((a, b) => b.score - a.score);
+  const nameSpecificity: Partial<
+    Record<(typeof AUTOFILL_KINDS)[number], number>
+  > = {
+    firstName: 2,
+    lastName: 2,
+    fullName: 1,
+  };
+  return resolved.sort((a, b) => {
+    if (b.score !== a.score) {
+      return b.score - a.score;
+    }
+    return (
+      (nameSpecificity[b.kind] ?? 0) -
+      (nameSpecificity[a.kind] ?? 0)
+    );
+  });
 }
 
 /** Classifies a DOM field and keeps the full candidate list for explainability. */

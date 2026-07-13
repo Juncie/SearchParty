@@ -162,6 +162,36 @@ describe("Fuse-based autofill scoring", () => {
     expect(last.score).toBeGreaterThanOrEqual(88);
   });
 
+  it("does not classify split name fields as fullName when signals stack", () => {
+    const first = matchDomFieldToAutofillDetailed({
+      tagName: "input",
+      type: "text",
+      name: "firstName",
+      id: "sp-first-name",
+      autocomplete: "given-name",
+      labelText: "First name",
+      nearbyText: "Last name",
+      isVisible: true,
+      isDisabled: false,
+    });
+    const last = matchDomFieldToAutofillDetailed({
+      tagName: "input",
+      type: "text",
+      name: "lastName",
+      id: "sp-last-name",
+      autocomplete: "family-name",
+      labelText: "Last name",
+      nearbyText: "First name",
+      isVisible: true,
+      isDisabled: false,
+    });
+
+    expect(first.kind).toBe("firstName");
+    expect(last.kind).toBe("lastName");
+    expect(first.score).toBeGreaterThanOrEqual(88);
+    expect(last.score).toBeGreaterThanOrEqual(88);
+  });
+
   it("uses domain memory as a small boost only", () => {
     const result = matchDomFieldToAutofillDetailed(
       {

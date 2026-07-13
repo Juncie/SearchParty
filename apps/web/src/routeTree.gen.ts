@@ -9,21 +9,34 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as ProposalsRouteImport } from './routes/proposals'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ProfileNewRouteImport } from './routes/profile.new'
 import { Route as ApiTodosRouteImport } from './routes/api/todos'
 import { Route as ApiAccountRouteImport } from './routes/api/account'
 import { Route as ApiResumesIndexRouteImport } from './routes/api/resumes/index'
 import { Route as ApiProfilesIndexRouteImport } from './routes/api/profiles/index'
+import { Route as ApiJobsIndexRouteImport } from './routes/api/jobs/index'
 import { Route as ApiHealthIndexRouteImport } from './routes/api/health/index'
+import { Route as ApiGenerationIndexRouteImport } from './routes/api/generation/index'
+import { Route as ApiFactProposalsIndexRouteImport } from './routes/api/fact-proposals/index'
+import { Route as ApiApplicationsIndexRouteImport } from './routes/api/applications/index'
 import { Route as ApiUserMeRouteImport } from './routes/api/user/me'
 import { Route as ApiTrpcSplatRouteImport } from './routes/api.trpc.$'
 import { Route as ApiResumesResumeIdRouteImport } from './routes/api/resumes/$resumeId'
 import { Route as ApiProfilesActiveRouteImport } from './routes/api/profiles/active'
 import { Route as ApiProfilesProfileIdRouteImport } from './routes/api/profiles/$profileId'
+import { Route as ApiGenerationDocumentIdRouteImport } from './routes/api/generation/$documentId'
+import { Route as ApiFactProposalsProposalIdRouteImport } from './routes/api/fact-proposals/$proposalId'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
+import { Route as ApiApplicationsApplicationIdRouteImport } from './routes/api/applications/$applicationId'
 import { Route as ApiAccountOnboardingRouteImport } from './routes/api/account/onboarding'
 
+const ProposalsRoute = ProposalsRouteImport.update({
+  id: '/proposals',
+  path: '/proposals',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
@@ -54,9 +67,29 @@ const ApiProfilesIndexRoute = ApiProfilesIndexRouteImport.update({
   path: '/api/profiles/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiJobsIndexRoute = ApiJobsIndexRouteImport.update({
+  id: '/api/jobs/',
+  path: '/api/jobs/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiHealthIndexRoute = ApiHealthIndexRouteImport.update({
   id: '/api/health/',
   path: '/api/health/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiGenerationIndexRoute = ApiGenerationIndexRouteImport.update({
+  id: '/api/generation/',
+  path: '/api/generation/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiFactProposalsIndexRoute = ApiFactProposalsIndexRouteImport.update({
+  id: '/api/fact-proposals/',
+  path: '/api/fact-proposals/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiApplicationsIndexRoute = ApiApplicationsIndexRouteImport.update({
+  id: '/api/applications/',
+  path: '/api/applications/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiUserMeRoute = ApiUserMeRouteImport.update({
@@ -84,11 +117,28 @@ const ApiProfilesProfileIdRoute = ApiProfilesProfileIdRouteImport.update({
   path: '/api/profiles/$profileId',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiGenerationDocumentIdRoute = ApiGenerationDocumentIdRouteImport.update({
+  id: '/api/generation/$documentId',
+  path: '/api/generation/$documentId',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiFactProposalsProposalIdRoute =
+  ApiFactProposalsProposalIdRouteImport.update({
+    id: '/api/fact-proposals/$proposalId',
+    path: '/api/fact-proposals/$proposalId',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
   id: '/api/auth/$',
   path: '/api/auth/$',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiApplicationsApplicationIdRoute =
+  ApiApplicationsApplicationIdRouteImport.update({
+    id: '/api/applications/$applicationId',
+    path: '/api/applications/$applicationId',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiAccountOnboardingRoute = ApiAccountOnboardingRouteImport.update({
   id: '/onboarding',
   path: '/onboarding',
@@ -97,50 +147,74 @@ const ApiAccountOnboardingRoute = ApiAccountOnboardingRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/proposals': typeof ProposalsRoute
   '/api/account': typeof ApiAccountRouteWithChildren
   '/api/todos': typeof ApiTodosRoute
   '/profile/new': typeof ProfileNewRoute
   '/api/account/onboarding': typeof ApiAccountOnboardingRoute
+  '/api/applications/$applicationId': typeof ApiApplicationsApplicationIdRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
+  '/api/fact-proposals/$proposalId': typeof ApiFactProposalsProposalIdRoute
+  '/api/generation/$documentId': typeof ApiGenerationDocumentIdRoute
   '/api/profiles/$profileId': typeof ApiProfilesProfileIdRoute
   '/api/profiles/active': typeof ApiProfilesActiveRoute
   '/api/resumes/$resumeId': typeof ApiResumesResumeIdRoute
   '/api/trpc/$': typeof ApiTrpcSplatRoute
   '/api/user/me': typeof ApiUserMeRoute
+  '/api/applications/': typeof ApiApplicationsIndexRoute
+  '/api/fact-proposals/': typeof ApiFactProposalsIndexRoute
+  '/api/generation/': typeof ApiGenerationIndexRoute
   '/api/health/': typeof ApiHealthIndexRoute
+  '/api/jobs/': typeof ApiJobsIndexRoute
   '/api/profiles/': typeof ApiProfilesIndexRoute
   '/api/resumes/': typeof ApiResumesIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/proposals': typeof ProposalsRoute
   '/api/account': typeof ApiAccountRouteWithChildren
   '/api/todos': typeof ApiTodosRoute
   '/profile/new': typeof ProfileNewRoute
   '/api/account/onboarding': typeof ApiAccountOnboardingRoute
+  '/api/applications/$applicationId': typeof ApiApplicationsApplicationIdRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
+  '/api/fact-proposals/$proposalId': typeof ApiFactProposalsProposalIdRoute
+  '/api/generation/$documentId': typeof ApiGenerationDocumentIdRoute
   '/api/profiles/$profileId': typeof ApiProfilesProfileIdRoute
   '/api/profiles/active': typeof ApiProfilesActiveRoute
   '/api/resumes/$resumeId': typeof ApiResumesResumeIdRoute
   '/api/trpc/$': typeof ApiTrpcSplatRoute
   '/api/user/me': typeof ApiUserMeRoute
+  '/api/applications': typeof ApiApplicationsIndexRoute
+  '/api/fact-proposals': typeof ApiFactProposalsIndexRoute
+  '/api/generation': typeof ApiGenerationIndexRoute
   '/api/health': typeof ApiHealthIndexRoute
+  '/api/jobs': typeof ApiJobsIndexRoute
   '/api/profiles': typeof ApiProfilesIndexRoute
   '/api/resumes': typeof ApiResumesIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/proposals': typeof ProposalsRoute
   '/api/account': typeof ApiAccountRouteWithChildren
   '/api/todos': typeof ApiTodosRoute
   '/profile/new': typeof ProfileNewRoute
   '/api/account/onboarding': typeof ApiAccountOnboardingRoute
+  '/api/applications/$applicationId': typeof ApiApplicationsApplicationIdRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
+  '/api/fact-proposals/$proposalId': typeof ApiFactProposalsProposalIdRoute
+  '/api/generation/$documentId': typeof ApiGenerationDocumentIdRoute
   '/api/profiles/$profileId': typeof ApiProfilesProfileIdRoute
   '/api/profiles/active': typeof ApiProfilesActiveRoute
   '/api/resumes/$resumeId': typeof ApiResumesResumeIdRoute
   '/api/trpc/$': typeof ApiTrpcSplatRoute
   '/api/user/me': typeof ApiUserMeRoute
+  '/api/applications/': typeof ApiApplicationsIndexRoute
+  '/api/fact-proposals/': typeof ApiFactProposalsIndexRoute
+  '/api/generation/': typeof ApiGenerationIndexRoute
   '/api/health/': typeof ApiHealthIndexRoute
+  '/api/jobs/': typeof ApiJobsIndexRoute
   '/api/profiles/': typeof ApiProfilesIndexRoute
   '/api/resumes/': typeof ApiResumesIndexRoute
 }
@@ -148,71 +222,110 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/proposals'
     | '/api/account'
     | '/api/todos'
     | '/profile/new'
     | '/api/account/onboarding'
+    | '/api/applications/$applicationId'
     | '/api/auth/$'
+    | '/api/fact-proposals/$proposalId'
+    | '/api/generation/$documentId'
     | '/api/profiles/$profileId'
     | '/api/profiles/active'
     | '/api/resumes/$resumeId'
     | '/api/trpc/$'
     | '/api/user/me'
+    | '/api/applications/'
+    | '/api/fact-proposals/'
+    | '/api/generation/'
     | '/api/health/'
+    | '/api/jobs/'
     | '/api/profiles/'
     | '/api/resumes/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/proposals'
     | '/api/account'
     | '/api/todos'
     | '/profile/new'
     | '/api/account/onboarding'
+    | '/api/applications/$applicationId'
     | '/api/auth/$'
+    | '/api/fact-proposals/$proposalId'
+    | '/api/generation/$documentId'
     | '/api/profiles/$profileId'
     | '/api/profiles/active'
     | '/api/resumes/$resumeId'
     | '/api/trpc/$'
     | '/api/user/me'
+    | '/api/applications'
+    | '/api/fact-proposals'
+    | '/api/generation'
     | '/api/health'
+    | '/api/jobs'
     | '/api/profiles'
     | '/api/resumes'
   id:
     | '__root__'
     | '/'
+    | '/proposals'
     | '/api/account'
     | '/api/todos'
     | '/profile/new'
     | '/api/account/onboarding'
+    | '/api/applications/$applicationId'
     | '/api/auth/$'
+    | '/api/fact-proposals/$proposalId'
+    | '/api/generation/$documentId'
     | '/api/profiles/$profileId'
     | '/api/profiles/active'
     | '/api/resumes/$resumeId'
     | '/api/trpc/$'
     | '/api/user/me'
+    | '/api/applications/'
+    | '/api/fact-proposals/'
+    | '/api/generation/'
     | '/api/health/'
+    | '/api/jobs/'
     | '/api/profiles/'
     | '/api/resumes/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  ProposalsRoute: typeof ProposalsRoute
   ApiAccountRoute: typeof ApiAccountRouteWithChildren
   ApiTodosRoute: typeof ApiTodosRoute
   ProfileNewRoute: typeof ProfileNewRoute
+  ApiApplicationsApplicationIdRoute: typeof ApiApplicationsApplicationIdRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
+  ApiFactProposalsProposalIdRoute: typeof ApiFactProposalsProposalIdRoute
+  ApiGenerationDocumentIdRoute: typeof ApiGenerationDocumentIdRoute
   ApiProfilesProfileIdRoute: typeof ApiProfilesProfileIdRoute
   ApiProfilesActiveRoute: typeof ApiProfilesActiveRoute
   ApiResumesResumeIdRoute: typeof ApiResumesResumeIdRoute
   ApiTrpcSplatRoute: typeof ApiTrpcSplatRoute
   ApiUserMeRoute: typeof ApiUserMeRoute
+  ApiApplicationsIndexRoute: typeof ApiApplicationsIndexRoute
+  ApiFactProposalsIndexRoute: typeof ApiFactProposalsIndexRoute
+  ApiGenerationIndexRoute: typeof ApiGenerationIndexRoute
   ApiHealthIndexRoute: typeof ApiHealthIndexRoute
+  ApiJobsIndexRoute: typeof ApiJobsIndexRoute
   ApiProfilesIndexRoute: typeof ApiProfilesIndexRoute
   ApiResumesIndexRoute: typeof ApiResumesIndexRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/proposals': {
+      id: '/proposals'
+      path: '/proposals'
+      fullPath: '/proposals'
+      preLoaderRoute: typeof ProposalsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -255,11 +368,39 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiProfilesIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/jobs/': {
+      id: '/api/jobs/'
+      path: '/api/jobs'
+      fullPath: '/api/jobs/'
+      preLoaderRoute: typeof ApiJobsIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/health/': {
       id: '/api/health/'
       path: '/api/health'
       fullPath: '/api/health/'
       preLoaderRoute: typeof ApiHealthIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/generation/': {
+      id: '/api/generation/'
+      path: '/api/generation'
+      fullPath: '/api/generation/'
+      preLoaderRoute: typeof ApiGenerationIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/fact-proposals/': {
+      id: '/api/fact-proposals/'
+      path: '/api/fact-proposals'
+      fullPath: '/api/fact-proposals/'
+      preLoaderRoute: typeof ApiFactProposalsIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/applications/': {
+      id: '/api/applications/'
+      path: '/api/applications'
+      fullPath: '/api/applications/'
+      preLoaderRoute: typeof ApiApplicationsIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/user/me': {
@@ -297,11 +438,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiProfilesProfileIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/generation/$documentId': {
+      id: '/api/generation/$documentId'
+      path: '/api/generation/$documentId'
+      fullPath: '/api/generation/$documentId'
+      preLoaderRoute: typeof ApiGenerationDocumentIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/fact-proposals/$proposalId': {
+      id: '/api/fact-proposals/$proposalId'
+      path: '/api/fact-proposals/$proposalId'
+      fullPath: '/api/fact-proposals/$proposalId'
+      preLoaderRoute: typeof ApiFactProposalsProposalIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/auth/$': {
       id: '/api/auth/$'
       path: '/api/auth/$'
       fullPath: '/api/auth/$'
       preLoaderRoute: typeof ApiAuthSplatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/applications/$applicationId': {
+      id: '/api/applications/$applicationId'
+      path: '/api/applications/$applicationId'
+      fullPath: '/api/applications/$applicationId'
+      preLoaderRoute: typeof ApiApplicationsApplicationIdRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/account/onboarding': {
@@ -328,16 +490,24 @@ const ApiAccountRouteWithChildren = ApiAccountRoute._addFileChildren(
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  ProposalsRoute: ProposalsRoute,
   ApiAccountRoute: ApiAccountRouteWithChildren,
   ApiTodosRoute: ApiTodosRoute,
   ProfileNewRoute: ProfileNewRoute,
+  ApiApplicationsApplicationIdRoute: ApiApplicationsApplicationIdRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
+  ApiFactProposalsProposalIdRoute: ApiFactProposalsProposalIdRoute,
+  ApiGenerationDocumentIdRoute: ApiGenerationDocumentIdRoute,
   ApiProfilesProfileIdRoute: ApiProfilesProfileIdRoute,
   ApiProfilesActiveRoute: ApiProfilesActiveRoute,
   ApiResumesResumeIdRoute: ApiResumesResumeIdRoute,
   ApiTrpcSplatRoute: ApiTrpcSplatRoute,
   ApiUserMeRoute: ApiUserMeRoute,
+  ApiApplicationsIndexRoute: ApiApplicationsIndexRoute,
+  ApiFactProposalsIndexRoute: ApiFactProposalsIndexRoute,
+  ApiGenerationIndexRoute: ApiGenerationIndexRoute,
   ApiHealthIndexRoute: ApiHealthIndexRoute,
+  ApiJobsIndexRoute: ApiJobsIndexRoute,
   ApiProfilesIndexRoute: ApiProfilesIndexRoute,
   ApiResumesIndexRoute: ApiResumesIndexRoute,
 }

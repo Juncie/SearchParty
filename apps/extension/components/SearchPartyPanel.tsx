@@ -21,6 +21,7 @@ import { DashboardPage } from "@/components/screens/DashboardPage";
 import { LoginPage } from "@/components/screens/LoginPage";
 import { ProfileEditPage } from "@/components/screens/ProfileEditPage";
 import { ProfileSetupPage } from "@/components/screens/ProfileSetupPage";
+import { SaveJobPage } from "@/components/screens/SaveJobPage";
 import { SettingsPage } from "@/components/screens/SettingsPage";
 import { applyStoredTheme } from "@/lib/extension-preferences";
 import { cn } from "@/lib/utils";
@@ -110,6 +111,12 @@ function createExtensionRouter(surface: ExtensionSurface) {
     component: () => <AutofillPage surface={surface} />,
   });
 
+  const saveJobRoute = createRoute({
+    getParentRoute: () => rootRoute,
+    path: "/jobs/save",
+    component: () => <SaveJobPage surface={surface} />,
+  });
+
   const newProfileRoute = createRoute({
     getParentRoute: () => rootRoute,
     path: "/profiles/new",
@@ -148,6 +155,7 @@ function createExtensionRouter(surface: ExtensionSurface) {
     loginRoute,
     dashboardRoute,
     autofillRoute,
+    saveJobRoute,
     newProfileRoute,
     editProfileRoute,
     settingsRoute,

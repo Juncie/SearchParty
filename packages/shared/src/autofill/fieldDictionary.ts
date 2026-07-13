@@ -18,6 +18,10 @@ export const AUTOFILL_KINDS: readonly AutofillFieldKind[] =
     "workHistory",
     "education",
     "smsConsent",
+    "workAuthorization",
+    "requiresSponsorship",
+    "openToRelocation",
+    "startAvailability",
   ] as const;
 
 /** Weighted dictionary row used by the Fuse-backed matcher. */
@@ -327,6 +331,64 @@ export const FIELD_DICTIONARY: readonly FieldDictionaryRecord[] =
         "phone number",
         "mobile number",
         "email",
+      ],
+    },
+    {
+      kind: "workAuthorization",
+      phrases: [
+        "work authorization",
+        "authorized to work",
+        "legally authorized to work",
+        "eligible to work",
+        "right to work",
+        "work in the united states",
+        "work in the us",
+      ],
+      negativePhrases: [
+        "sponsorship",
+        "visa",
+        "require sponsorship",
+      ],
+    },
+    {
+      kind: "requiresSponsorship",
+      phrases: [
+        "require sponsorship",
+        "requires sponsorship",
+        "visa sponsorship",
+        "need sponsorship",
+        "will you now or in the future require sponsorship",
+        "immigration sponsorship",
+      ],
+      negativePhrases: [
+        "authorized to work",
+        "work authorization",
+        "eligible to work",
+      ],
+    },
+    {
+      kind: "openToRelocation",
+      phrases: [
+        "open to relocation",
+        "willing to relocate",
+        "relocate",
+        "relocation",
+      ],
+      negativePhrases: ["commute", "remote", "salary"],
+    },
+    {
+      kind: "startAvailability",
+      phrases: [
+        "start date",
+        "available to start",
+        "when can you start",
+        "earliest start date",
+        "availability",
+      ],
+      negativePhrases: [
+        "salary",
+        "relocation",
+        "work authorization",
       ],
     },
   ] as const;

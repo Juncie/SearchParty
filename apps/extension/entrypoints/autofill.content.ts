@@ -36,15 +36,19 @@ function shouldExposeField(
   return field.tier !== "ignore";
 }
 
+/**
+ * Kinds that stay manual even when text/textarea/select interactions are
+ * supported — they need explicit user consent or approved generated content.
+ */
 const MANUAL_VALUE_KINDS: ReadonlySet<AutofillFieldKind> =
-  new Set([
-    "resume",
-    "coverLetter",
-    "desiredSalary",
-    "workHistory",
-    "education",
-    "smsConsent",
-  ]);
+  new Set(["coverLetter", "smsConsent"]);
+
+/** Native radio kinds with confirmed Yes/No style account or preference answers. */
+const RADIO_FILLABLE_KINDS: ReadonlySet<AutofillFieldKind> = new Set([
+  "workAuthorization",
+  "requiresSponsorship",
+  "openToRelocation",
+]);
 
 function fillStatusForField(
   kind: AutofillFieldKind,
@@ -60,7 +64,20 @@ function fillStatusForField(
         "Consent checkboxes need an explicit user choice before SearchParty fills them.",
     };
   }
+  if (kind === "coverLetter") {
+    return {
+      fillStatus: "manual",
+      unsupportedReason:
+        "Cover letters need an approved draft before SearchParty can fill them.",
+    };
+  }
   if (interactionType === "file" && kind === "resume") {
+    return { fillStatus: "fillable" };
+  }
+  if (
+    interactionType === "radio" &&
+    RADIO_FILLABLE_KINDS.has(kind)
+  ) {
     return { fillStatus: "fillable" };
   }
   if (

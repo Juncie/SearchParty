@@ -14,7 +14,11 @@ export type AutofillFieldKind =
   | "desiredSalary"
   | "workHistory"
   | "education"
-  | "smsConsent";
+  | "smsConsent"
+  | "workAuthorization"
+  | "requiresSponsorship"
+  | "openToRelocation"
+  | "startAvailability";
 
 /** The browser interaction needed to complete a detected application field. */
 export type AutofillInteractionType =
@@ -97,7 +101,20 @@ export type AutofillPayloadValues = Record<
   string
 >;
 
-/** Minimal profile slice used when building autofill values (matches ApplicantProfile fields). */
+/** Structured work history row used when formatting the workHistory autofill slot. */
+export type AutofillWorkExperienceSlice = {
+  company: string;
+  title: string;
+  startDate: string;
+  endDate?: string;
+  description?: string;
+};
+
+/**
+ * Profile context used when building autofill values.
+ * Contact columns plus confirmed onboarding answers and structured work history.
+ * Account eligibility answers are supplied separately via {@link AutofillAnswerContext}.
+ */
 export type AutofillProfileSlice = {
   firstName: string;
   lastName: string;
@@ -107,6 +124,25 @@ export type AutofillProfileSlice = {
   githubUrl: string;
   portfolioUrl: string;
   projects: ReadonlyArray<{ url: string }>;
+  /** Confirmed profile onboarding answers (salary, education level, preferences). */
+  onboardingAnswers?: Readonly<Record<string, unknown>>;
+  /** Structured employment rows — never derived from yearsExperience alone. */
+  workExperiences?: ReadonlyArray<AutofillWorkExperienceSlice>;
+};
+
+/**
+ * Full answer context for building autofill payloads.
+ * Keeps account-wide eligibility separate from career-profile data.
+ */
+export type AutofillAnswerContext = {
+  user: { name: string; email: string };
+  profile: AutofillProfileSlice | null;
+  /** Account-level eligibility answers (authorization, sponsorship). */
+  accountOnboardingAnswers?: Readonly<Record<string, unknown>>;
+  /** When the user has a stored resume, sets the `resume` slot label for previews. */
+  resumeAttachment?: { label: string };
+  /** Approved cover letter text, if the user selected one. */
+  approvedCoverLetter?: string;
 };
 
 /** One scored field from a content-script scan, including stable id for apply messages. */

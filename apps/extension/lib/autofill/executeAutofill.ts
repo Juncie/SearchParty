@@ -124,6 +124,84 @@ function booleanFromValue(value: string): boolean | null {
   return null;
 }
 
+/**
+ * Selects a native radio option by matching label/value against the fill string.
+ * Verifies the chosen option is checked afterward.
+ */
+function selectNativeRadio(
+  el: HTMLInputElement,
+  rawValue: string,
+): { ok: boolean; reason?: string } {
+  const target = normalizeOptionValue(rawValue);
+  if (!target) {
+    return { ok: false, reason: "Radio fill value was empty." };
+  }
+
+  const groupName = el.name?.trim();
+  const candidates = groupName
+    ? Array.from(
+        document.querySelectorAll<HTMLInputElement>(
+          `input[type="radio"][name="${cssEscape(groupName)}"]`,
+        ),
+      )
+    : [el];
+
+  const match = candidates.find((candidate) => {
+    const value = normalizeOptionValue(candidate.value);
+    const labelledBy = candidate.getAttribute("aria-labelledby");
+    const ariaLabel = normalizeOptionValue(
+      candidate.getAttribute("aria-label") ?? "",
+    );
+    let labelText = "";
+    if (candidate.id) {
+      const label = document.querySelector(
+        `label[for="${cssEscape(candidate.id)}"]`,
+      );
+      labelText = normalizeOptionValue(label?.textContent ?? "");
+    }
+    if (!labelText && candidate.parentElement?.tagName === "LABEL") {
+      labelText = normalizeOptionValue(
+        candidate.parentElement.textContent ?? "",
+      );
+    }
+    if (!labelText && labelledBy) {
+      labelText = normalizeOptionValue(
+        labelledBy
+          .split(/\s+/)
+          .map((id) => document.getElementById(id)?.textContent ?? "")
+          .join(" "),
+      );
+    }
+
+    const haystacks = [value, ariaLabel, labelText].filter(Boolean);
+    return haystacks.some(
+      (haystack) =>
+        haystack === target ||
+        haystack.includes(target) ||
+        target.includes(haystack),
+    );
+  });
+
+  if (!match) {
+    return {
+      ok: false,
+      reason: "No matching radio option was found.",
+    };
+  }
+
+  if (!match.checked) {
+    match.checked = true;
+    dispatchFillEvents(match);
+  }
+
+  return match.checked
+    ? { ok: true }
+    : {
+        ok: false,
+        reason: "Radio state did not update.",
+      };
+}
+
 function resumeAutofillTooLargeReason(): string {
   return `Resume is larger than ${String(Math.floor(RESUME_AUTOFILL_MAX_BYTES / (1024 * 1024)))}MB; shrink the file or skip file autofill.`;
 }
@@ -479,10 +557,7 @@ async function executeFieldInteraction(
   }
 
   if (el instanceof HTMLInputElement && el.type === "radio") {
-    return {
-      ok: false,
-      reason: "radio inputs are detected but not filled yet.",
-    };
+    return selectNativeRadio(el, fill.value);
   }
 
   if (el instanceof HTMLInputElement && el.type === "file") {

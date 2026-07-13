@@ -126,6 +126,98 @@ describe("buildAutofillPayloadValues", () => {
     });
     expect(values.portfolio).toBe("https://example.com/p");
   });
+
+  it("maps confirmed onboarding salary and education answers", () => {
+    const values = buildAutofillPayloadValues({
+      user: { name: "A B", email: "a@b.co" },
+      profile: {
+        firstName: "A",
+        lastName: "B",
+        phone: "",
+        address: "",
+        linkedinUrl: "",
+        githubUrl: "",
+        portfolioUrl: "",
+        projects: [],
+        onboardingAnswers: {
+          desiredSalary: "  $120,000–$135,000  ",
+          educationLevel: "Bachelor's Degree",
+          yearsExperience: "4-5 years",
+        },
+      },
+    });
+    expect(values.desiredSalary).toBe("$120,000–$135,000");
+    expect(values.education).toBe("Bachelor's Degree");
+    expect(values.workHistory).toBe("");
+  });
+
+  it("ignores malformed onboarding values and empty strings", () => {
+    const values = buildAutofillPayloadValues({
+      user: { name: "A B", email: "a@b.co" },
+      profile: {
+        firstName: "A",
+        lastName: "B",
+        phone: "",
+        address: "",
+        linkedinUrl: "",
+        githubUrl: "",
+        portfolioUrl: "",
+        projects: [],
+        onboardingAnswers: {
+          desiredSalary: "   ",
+          educationLevel: 42,
+          openToRelocation: "Yes",
+        },
+      },
+    });
+    expect(values.desiredSalary).toBe("");
+    expect(values.education).toBe("");
+  });
+
+  it("formats structured work experiences and never invents them", () => {
+    const empty = buildAutofillPayloadValues({
+      user: { name: "A B", email: "a@b.co" },
+      profile: {
+        firstName: "A",
+        lastName: "B",
+        phone: "",
+        address: "",
+        linkedinUrl: "",
+        githubUrl: "",
+        portfolioUrl: "",
+        projects: [],
+        onboardingAnswers: { yearsExperience: "4-5 years" },
+        workExperiences: [],
+      },
+    });
+    expect(empty.workHistory).toBe("");
+
+    const values = buildAutofillPayloadValues({
+      user: { name: "A B", email: "a@b.co" },
+      profile: {
+        firstName: "A",
+        lastName: "B",
+        phone: "",
+        address: "",
+        linkedinUrl: "",
+        githubUrl: "",
+        portfolioUrl: "",
+        projects: [],
+        workExperiences: [
+          {
+            company: "Acme",
+            title: "Engineer",
+            startDate: "2020",
+            endDate: "2022",
+            description: "Built APIs",
+          },
+        ],
+      },
+    });
+    expect(values.workHistory).toContain("Engineer at Acme");
+    expect(values.workHistory).toContain("2020 – 2022");
+    expect(values.workHistory).toContain("Built APIs");
+  });
 });
 
 describe("valueForAutofillKind", () => {

@@ -1,7 +1,9 @@
 import type {
+  AutofillAnswerContext,
   AutofillFieldKind,
   AutofillPayloadValues,
   AutofillProfileSlice,
+  AutofillWorkExperienceSlice,
 } from "./types";
 
 /**
@@ -26,15 +28,69 @@ export function splitDisplayName(displayName: string): {
   };
 }
 
-/** Builds the flat string map used when applying autofill values. */
-export function buildAutofillPayloadValues(input: {
-  user: { name: string; email: string };
-  profile: AutofillProfileSlice | null;
-  /** When the user has a stored resume, sets the `resume` slot label for previews. */
-  resumeAttachment?: { label: string };
-}): AutofillPayloadValues {
+/**
+ * Reads a non-empty string from onboarding/account JSON, ignoring blank values.
+ */
+export function readConfirmedStringAnswer(
+  answers: Readonly<Record<string, unknown>> | undefined,
+  field: string,
+): string {
+  if (!answers) {
+    return "";
+  }
+  const raw = answers[field];
+  if (typeof raw !== "string") {
+    return "";
+  }
+  return raw.trim();
+}
+
+/**
+ * Formats structured work experiences into a plain-text work history answer.
+ * Returns empty when no structured rows exist — never invents employment.
+ */
+export function formatWorkHistoryAnswer(
+  experiences: ReadonlyArray<AutofillWorkExperienceSlice> | undefined,
+): string {
+  if (!experiences || experiences.length === 0) {
+    return "";
+  }
+
+  return experiences
+    .map((experience) => {
+      const range = [experience.startDate.trim(), experience.endDate?.trim()]
+        .filter(Boolean)
+        .join(" – ");
+      const header = [experience.title.trim(), experience.company.trim()]
+        .filter(Boolean)
+        .join(" at ");
+      const lines = [header, range, experience.description?.trim() ?? ""].filter(
+        Boolean,
+      );
+      return lines.join("\n");
+    })
+    .filter(Boolean)
+    .join("\n\n");
+}
+
+/**
+ * Builds the flat string map used when applying autofill values from confirmed
+ * profile and account answers. Never invents personal facts.
+ */
+export function buildAutofillPayloadValues(
+  input: AutofillAnswerContext | {
+    user: { name: string; email: string };
+    profile: AutofillProfileSlice | null;
+    resumeAttachment?: { label: string };
+  },
+): AutofillPayloadValues {
   const fromName = splitDisplayName(input.user.name);
   const p = input.profile;
+  const onboarding = p?.onboardingAnswers;
+  const accountAnswers =
+    "accountOnboardingAnswers" in input
+      ? input.accountOnboardingAnswers
+      : undefined;
 
   const firstName = (
     p?.firstName.trim() || fromName.firstName
@@ -61,6 +117,37 @@ export function buildAutofillPayloadValues(input: {
     }
   }
 
+  const desiredSalary = readConfirmedStringAnswer(
+    onboarding,
+    "desiredSalary",
+  );
+  const education = readConfirmedStringAnswer(
+    onboarding,
+    "educationLevel",
+  );
+  const workHistory = formatWorkHistoryAnswer(p?.workExperiences);
+  const openToRelocation = readConfirmedStringAnswer(
+    onboarding,
+    "openToRelocation",
+  );
+  const startAvailability = readConfirmedStringAnswer(
+    onboarding,
+    "startAvailability",
+  );
+  const workAuthorization = readConfirmedStringAnswer(
+    accountAnswers,
+    "workAuthorization",
+  );
+  const requiresSponsorship = readConfirmedStringAnswer(
+    accountAnswers,
+    "requiresSponsorship",
+  );
+
+  const approvedCoverLetter =
+    "approvedCoverLetter" in input
+      ? (input.approvedCoverLetter?.trim() ?? "")
+      : "";
+
   return {
     fullName,
     firstName,
@@ -72,18 +159,22 @@ export function buildAutofillPayloadValues(input: {
     github,
     portfolio,
     resume: input.resumeAttachment?.label.trim() ?? "",
-    coverLetter: "",
-    desiredSalary: "",
-    workHistory: "",
-    education: "",
+    coverLetter: approvedCoverLetter,
+    desiredSalary,
+    workHistory,
+    education,
     smsConsent: "",
+    workAuthorization,
+    requiresSponsorship,
+    openToRelocation,
+    startAvailability,
   };
 }
 
 /** Looks up the fill string for a scanned field kind from a payload map. */
 export function valueForAutofillKind(
   values: AutofillPayloadValues,
-  kind: AutofillFieldKind
+  kind: AutofillFieldKind,
 ): string {
-  return values[kind];
+  return values[kind] ?? "";
 }

@@ -6,6 +6,9 @@ export const env = createEnv({
     DATABASE_URL: z.url().optional(),
     SERVER_URL: z.url().optional(),
     BASE_API_URL: z.url().optional(),
+    BETTER_AUTH_URL: z.url().optional(),
+    BETTER_AUTH_SECRET: z.string().min(16).optional(),
+    BETTER_AUTH_TRUSTED_EXTENSION_ORIGINS: z.string().optional(),
     /** Cloudflare account id (R2 S3 endpoint). */
     R2_ACCOUNT_ID: z.string().min(1).optional(),
     R2_ACCESS_KEY_ID: z.string().min(1).optional(),

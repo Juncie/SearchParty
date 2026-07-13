@@ -19,6 +19,7 @@ import {
   scanActiveTab,
 } from "@/lib/autofill-active-tab";
 import {
+  getAccountSetupResponse,
   listUploadedResumes,
   type AuthSession,
 } from "@/lib/searchparty-api";
@@ -48,6 +49,8 @@ export function useAutofillTabWorkflow(
     label: string;
     mimeType: string;
   } | null>(null);
+  const [accountOnboardingAnswers, setAccountOnboardingAnswers] =
+    useState<Record<string, unknown>>({});
 
   const payload = useMemo(() => {
     if (!session?.user || !profile) {
@@ -59,21 +62,26 @@ export function useAutofillTabWorkflow(
         email: session.user.email,
       },
       profile,
+      accountOnboardingAnswers,
       resumeAttachment: defaultResume
         ? { label: defaultResume.label }
         : undefined,
     });
-  }, [session, profile, defaultResume]);
+  }, [session, profile, defaultResume, accountOnboardingAnswers]);
 
   useEffect(() => {
     if (!session?.user) {
       setDefaultResume(null);
+      setAccountOnboardingAnswers({});
       return;
     }
     let cancelled = false;
     void (async () => {
       try {
-        const { resumes } = await listUploadedResumes();
+        const [{ resumes }, account] = await Promise.all([
+          listUploadedResumes(),
+          getAccountSetupResponse(),
+        ]);
         if (cancelled) {
           return;
         }
@@ -89,9 +97,13 @@ export function useAutofillTabWorkflow(
             }
             : null,
         );
+        setAccountOnboardingAnswers(
+          account.accountOnboardingAnswers ?? {},
+        );
       } catch {
         if (!cancelled) {
           setDefaultResume(null);
+          setAccountOnboardingAnswers({});
         }
       }
     })();

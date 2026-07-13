@@ -17,16 +17,21 @@ interface DashboardProfilesSectionProps {
     label: string;
     mimeType: string;
   } | null;
+  accountOnboardingAnswers?: Record<string, unknown>;
   isLoading: boolean;
   error: string | null;
   applyBusy: boolean;
   onEditProfile: (profileId: string) => void;
   onCreateProfile: () => void;
-  onApplyProfile: (profile: ApplicantProfile) => void | Promise<void>;
-  onSetDefaultProfile: (
-    profileId: string,
+  onApplyProfile: (
+    profile: ApplicantProfile
   ) => void | Promise<void>;
-  onDeleteProfile: (profileId: string) => void | Promise<void>;
+  onSetDefaultProfile: (
+    profileId: string
+  ) => void | Promise<void>;
+  onDeleteProfile: (
+    profileId: string
+  ) => void | Promise<void>;
 }
 
 export function DashboardProfilesSection({
@@ -35,6 +40,7 @@ export function DashboardProfilesSection({
   activeProfileId,
   scanFields,
   defaultResume,
+  accountOnboardingAnswers = {},
   isLoading,
   error,
   applyBusy,
@@ -44,9 +50,8 @@ export function DashboardProfilesSection({
   onSetDefaultProfile,
   onDeleteProfile,
 }: DashboardProfilesSectionProps) {
-  const [openActionsProfileId, setOpenActionsProfileId] = useState<
-    string | null
-  >(null);
+  const [openActionsProfileId, setOpenActionsProfileId] =
+    useState<string | null>(null);
 
   useEffect(() => {
     if (
@@ -77,7 +82,9 @@ export function DashboardProfilesSection({
       </div>
 
       {error ? (
-        <p className="error-message text-destructive">{error}</p>
+        <p className="error-message text-destructive">
+          {error}
+        </p>
       ) : null}
 
       <div className="grid gap-2">
@@ -89,9 +96,16 @@ export function DashboardProfilesSection({
             isDefault={profile.id === activeProfileId}
             scanFields={scanFields}
             defaultResume={defaultResume}
-            actionsMenuOpen={openActionsProfileId === profile.id}
+            accountOnboardingAnswers={
+              accountOnboardingAnswers
+            }
+            actionsMenuOpen={
+              openActionsProfileId === profile.id
+            }
             onActionsMenuOpenChange={(open) => {
-              setOpenActionsProfileId(open ? profile.id : null);
+              setOpenActionsProfileId(
+                open ? profile.id : null
+              );
             }}
             onEdit={() => void onEditProfile(profile.id)}
             onApply={() => void onApplyProfile(profile)}
@@ -117,7 +131,8 @@ export function DashboardProfilesSection({
             Create a new profile
           </span>
           <span className="text-xs/relaxed text-muted-foreground">
-            Start from scratch or pick a quick-start role on the next screen.
+            Start from scratch or pick a quick-start role on
+            the next screen.
           </span>
         </button>
       </div>

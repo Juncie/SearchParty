@@ -67,7 +67,7 @@ export function Login({
     >
       <CardHeader>
         <CardTitle>
-          <h2>Login</h2>
+          <h1>Login</h1>
         </CardTitle>
         <CardDescription>
           Use your SearchParty account credentials.

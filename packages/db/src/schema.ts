@@ -190,3 +190,202 @@ export const resumes = pgTable('resumes', {
     .defaultNow()
     .$onUpdate(() => new Date()),
 })
+
+export const profileEducation = pgTable('profile_education', {
+  id: text('id').primaryKey(),
+  profileId: text('profile_id')
+    .notNull()
+    .references(() => applicantProfiles.id, { onDelete: 'cascade' }),
+  school: text('school').notNull(),
+  degree: text('degree').notNull().default(''),
+  fieldOfStudy: text('field_of_study').notNull().default(''),
+  startDate: text('start_date').notNull().default(''),
+  endDate: text('end_date').notNull().default(''),
+})
+
+export const profileDocumentLinks = pgTable('profile_document_links', {
+  id: text('id').primaryKey(),
+  profileId: text('profile_id')
+    .notNull()
+    .references(() => applicantProfiles.id, { onDelete: 'cascade' }),
+  resumeId: text('resume_id')
+    .notNull()
+    .references(() => resumes.id, { onDelete: 'cascade' }),
+  role: text('role').notNull().default('primary_resume'),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+})
+
+export const documentExtractions = pgTable('document_extractions', {
+  id: text('id').primaryKey(),
+  resumeId: text('resume_id')
+    .notNull()
+    .references(() => resumes.id, { onDelete: 'cascade' }),
+  userId: text('user_id')
+    .notNull()
+    .references(() => user.id, { onDelete: 'cascade' }),
+  status: text('status').notNull().default('pending'),
+  extractorVersion: text('extractor_version').notNull(),
+  extractedText: text('extracted_text').notNull().default(''),
+  errorMessage: text('error_message').notNull().default(''),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+  updatedAt: timestamp('updated_at')
+    .notNull()
+    .defaultNow()
+    .$onUpdate(() => new Date()),
+})
+
+export const factProposals = pgTable('fact_proposals', {
+  id: text('id').primaryKey(),
+  userId: text('user_id')
+    .notNull()
+    .references(() => user.id, { onDelete: 'cascade' }),
+  profileId: text('profile_id').references(() => applicantProfiles.id, {
+    onDelete: 'set null',
+  }),
+  resumeId: text('resume_id')
+    .notNull()
+    .references(() => resumes.id, { onDelete: 'cascade' }),
+  kind: text('kind').notNull(),
+  status: text('status').notNull().default('pending'),
+  confidence: text('confidence').notNull().default('0.5'),
+  payload: jsonb('payload')
+    .$type<Record<string, unknown>>()
+    .notNull()
+    .default(sql`'{}'::jsonb`),
+  sourceSpan: jsonb('source_span')
+    .$type<Record<string, unknown> | null>()
+    .default(sql`NULL`),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+  updatedAt: timestamp('updated_at')
+    .notNull()
+    .defaultNow()
+    .$onUpdate(() => new Date()),
+  reviewedAt: timestamp('reviewed_at'),
+})
+
+export const jobPostings = pgTable('job_postings', {
+  id: text('id').primaryKey(),
+  userId: text('user_id')
+    .notNull()
+    .references(() => user.id, { onDelete: 'cascade' }),
+  sourceUrl: text('source_url').notNull(),
+  platform: text('platform').notNull().default('generic'),
+  company: text('company').notNull().default(''),
+  title: text('title').notNull().default(''),
+  location: text('location').notNull().default(''),
+  description: text('description').notNull().default(''),
+  requirements: text('requirements').notNull().default(''),
+  extractorVersion: text('extractor_version').notNull().default(''),
+  rawEvidence: jsonb('raw_evidence')
+    .$type<Record<string, unknown>>()
+    .notNull()
+    .default(sql`'{}'::jsonb`),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+  updatedAt: timestamp('updated_at')
+    .notNull()
+    .defaultNow()
+    .$onUpdate(() => new Date()),
+})
+
+export const applications = pgTable('applications', {
+  id: text('id').primaryKey(),
+  userId: text('user_id')
+    .notNull()
+    .references(() => user.id, { onDelete: 'cascade' }),
+  profileId: text('profile_id').references(() => applicantProfiles.id, {
+    onDelete: 'set null',
+  }),
+  jobPostingId: text('job_posting_id')
+    .notNull()
+    .references(() => jobPostings.id, { onDelete: 'cascade' }),
+  resumeId: text('resume_id').references(() => resumes.id, {
+    onDelete: 'set null',
+  }),
+  status: text('status').notNull().default('saved'),
+  notes: text('notes').notNull().default(''),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+  updatedAt: timestamp('updated_at')
+    .notNull()
+    .defaultNow()
+    .$onUpdate(() => new Date()),
+})
+
+export const applicationEvents = pgTable('application_events', {
+  id: text('id').primaryKey(),
+  applicationId: text('application_id')
+    .notNull()
+    .references(() => applications.id, { onDelete: 'cascade' }),
+  fromStatus: text('from_status').notNull().default(''),
+  toStatus: text('to_status').notNull(),
+  note: text('note').notNull().default(''),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+})
+
+export const generatedDocuments = pgTable('generated_documents', {
+  id: text('id').primaryKey(),
+  userId: text('user_id')
+    .notNull()
+    .references(() => user.id, { onDelete: 'cascade' }),
+  profileId: text('profile_id').references(() => applicantProfiles.id, {
+    onDelete: 'set null',
+  }),
+  jobPostingId: text('job_posting_id').references(() => jobPostings.id, {
+    onDelete: 'set null',
+  }),
+  kind: text('kind').notNull().default('cover_letter'),
+  content: text('content').notNull().default(''),
+  status: text('status').notNull().default('draft'),
+  evidenceJson: jsonb('evidence_json')
+    .$type<{ factIds: string[]; notes?: string }>()
+    .notNull()
+    .default(sql`'{"factIds":[]}'::jsonb`),
+  model: text('model').notNull().default(''),
+  promptVersion: text('prompt_version').notNull().default(''),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+  updatedAt: timestamp('updated_at')
+    .notNull()
+    .defaultNow()
+    .$onUpdate(() => new Date()),
+  approvedAt: timestamp('approved_at'),
+})
+
+export const customAnswers = pgTable('custom_answers', {
+  id: text('id').primaryKey(),
+  userId: text('user_id')
+    .notNull()
+    .references(() => user.id, { onDelete: 'cascade' }),
+  profileId: text('profile_id').references(() => applicantProfiles.id, {
+    onDelete: 'set null',
+  }),
+  questionPattern: text('question_pattern').notNull(),
+  sourceQuestion: text('source_question').notNull().default(''),
+  answer: text('answer').notNull(),
+  status: text('status').notNull().default('confirmed'),
+  evidenceJson: jsonb('evidence_json')
+    .$type<{ factIds: string[] }>()
+    .notNull()
+    .default(sql`'{"factIds":[]}'::jsonb`),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+  updatedAt: timestamp('updated_at')
+    .notNull()
+    .defaultNow()
+    .$onUpdate(() => new Date()),
+})
+
+export const generationRuns = pgTable('generation_runs', {
+  id: text('id').primaryKey(),
+  userId: text('user_id')
+    .notNull()
+    .references(() => user.id, { onDelete: 'cascade' }),
+  generatedDocumentId: text('generated_document_id').references(
+    () => generatedDocuments.id,
+    { onDelete: 'set null' },
+  ),
+  model: text('model').notNull().default(''),
+  promptVersion: text('prompt_version').notNull().default(''),
+  inputFactIds: jsonb('input_fact_ids')
+    .$type<string[]>()
+    .notNull()
+    .default(sql`'[]'::jsonb`),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+})
